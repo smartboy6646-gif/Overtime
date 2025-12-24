@@ -105,6 +105,19 @@ Rate saved: ₩<span id="rateShow"></span>
 </div>
 
 <script>
+
+function applyRateUI(){
+  if(rate && rate !== ""){
+    document.getElementById("rateShow").innerText = rate;
+    document.getElementById("salaryBox").classList.add("hide");
+    document.getElementById("rateSaved").classList.remove("hide");
+  }else{
+    document.getElementById("salaryBox").classList.remove("hide");
+    document.getElementById("rateSaved").classList.add("hide");
+  }
+}
+  applyRateUI();
+</script>
 let data = JSON.parse(localStorage.getItem("otData")||"[]");
 let rate = localStorage.getItem("rate");
 
@@ -138,6 +151,7 @@ function saveRate(){
  document.getElementById("salaryBox").classList="hide";
  document.getElementById("rateSaved").classList="";
 }
+  applyRateUI();
 
 function editRate(){
  document.getElementById("salaryBox").classList="";
@@ -214,3 +228,4 @@ function showReport(){
 </script>
 </body>
 </html>
+
