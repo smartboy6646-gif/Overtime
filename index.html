@@ -1,223 +1,216 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"/>
 <title>Ronnie Ruchal – OT Tracker</title>
 
 <style>
-*{box-sizing:border-box}
-body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI";background:#eef2f7}
-.app{max-width:420px;margin:10px auto;background:#fff;border-radius:16px;padding:14px}
-h2{text-align:center;margin:4px 0;color:#1e3a8a}
-.sub{text-align:center;font-size:12px;color:#64748b;margin-bottom:10px}
-
-label{font-size:13px;font-weight:600;color:#1e40af}
+body{
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  margin:0;
+  background:#f5f5f5;
+}
+.container{
+  max-width:420px;
+  margin:auto;
+  padding:15px;
+}
+h2{text-align:center}
 select,input,button{
   width:100%;
-  height:44px;
-  font-size:15px;
-  padding:8px 10px;
-  margin-top:4px;
-  border-radius:12px;
-  border:2px solid #3b82f6;
-  touch-action:manipulation;
+  padding:10px;
+  margin:6px 0;
+  font-size:16px;
 }
 button{
-  background:#2563eb;
+  background:#111;
   color:#fff;
-  font-weight:700;
   border:none;
+  border-radius:6px;
 }
-.row{margin-bottom:10px}
-
-table{width:100%;border-collapse:collapse;margin-top:14px}
-th,td{padding:6px;font-size:12px;border-bottom:1px solid #e5e7eb;text-align:center}
-th{color:#94a3b8}
-.badge{font-size:11px;padding:2px 6px;border-radius:6px;background:#e5e7eb}
-.del{background:#fee2e2;color:#dc2626;border:none;padding:4px 6px;border-radius:6px}
-
-.report{
-  background:#0f172a;
-  color:#fff;
-  padding:12px;
-  border-radius:14px;
-  margin-top:16px;
+table{
+  width:100%;
+  border-collapse:collapse;
+  margin-top:10px;
+  font-size:14px;
 }
-.report h3{margin:0 0 8px 0;font-size:14px}
-.green{color:#4ade80;font-weight:800;font-size:22px}
-
-.footer{text-align:center;font-size:11px;color:#94a3b8;margin-top:14px}
+th,td{
+  border-bottom:1px solid #ccc;
+  padding:6px;
+  text-align:center;
+}
+.red{color:red;font-weight:600}
+.small{font-size:12px;color:#555}
+.hide{display:none}
 </style>
 </head>
 
 <body>
-<div class="app">
-<h2>Ronnie Ruchal</h2>
-<div class="sub">OT & Salary Tracker • v1.3.0</div>
+<div class="container">
+<h2>Ronnie Ruchal – OT Tracker</h2>
 
-<div class="row">
-<label>Date</label>
-<select id="dateSel"></select>
+<!-- Salary -->
+<div id="salaryBox">
+<input type="number" id="rate" placeholder="Hourly rate ₩">
+<button onclick="saveRate()">Save Rate</button>
 </div>
 
-<div class="row">
-<label>Day Type</label>
-<select id="day">
-  <option value="weekday">Weekday (Mon–Fri)</option>
-  <option value="saturday">Saturday</option>
-  <option value="sunday">Sunday</option>
-  <option value="holiday">Public Holiday</option>
+<div id="rateSaved" class="hide small">
+Rate saved: ₩<span id="rateShow"></span>
+<button onclick="editRate()">Change Rate</button>
+</div>
+
+<hr>
+
+<!-- Entry -->
+<select id="dayType">
+<option value="weekday">Weekday</option>
+<option value="saturday">Saturday</option>
+<option value="sunday">Sunday</option>
+<option value="holiday">Public Holiday</option>
 </select>
-</div>
 
-<div class="row" id="workedRow" style="display:none">
-<label>Worked Today?</label>
+<select id="dateOffset">
+<option value="0">Today</option>
+<option value="1">1 day ago</option>
+<option value="2">2 days ago</option>
+<option value="3">3 days ago</option>
+</select>
+
+<div id="workedBox" class="hide">
 <select id="worked">
-  <option value="yes">Yes</option>
-  <option value="no">No</option>
+<option value="yes">Worked</option>
+<option value="no">Did not work</option>
 </select>
 </div>
 
-<div class="row" id="timeRow">
-<label>Out Time</label>
-<select id="out">
-<option value="">Select</option>
-<option value="18:00">6:00</option>
-<option value="18:30">6:30</option>
-<option value="19:00">7:00</option>
-<option value="19:30">7:30</option>
-<option value="20:00">8:00</option>
-<option value="20:30">8:30</option>
-<option value="21:00">9:00</option>
-<option value="21:30">9:30</option>
-<option value="22:00">10:00</option>
-<option value="22:30">10:30</option>
-<option value="23:00">11:00</option>
-<option value="23:30">11:30</option>
-<option value="24:00">12:00</option>
-</select>
-</div>
+<select id="outTime"></select>
 
-<button onclick="save()">Save Day</button>
+<button onclick="saveEntry()">Save</button>
 
+<!-- History -->
 <table>
 <thead>
-<tr><th>Date</th><th>Day</th><th>Status</th><th>Hours</th><th></th></tr>
+<tr><th>Date</th><th>Day</th><th>Hours</th><th>X</th></tr>
 </thead>
-<tbody id="list"></tbody>
+<tbody id="history"></tbody>
 </table>
 
-<div class="report">
-<h3>Monthly Report</h3>
-<div id="counts"></div>
+<hr>
 
-<label style="margin-top:8px;display:block">Hourly Rate (₩)</label>
-<input type="number" id="rate" value="11500">
+<button onclick="showReport()">Monthly Report</button>
 
-<button onclick="calc()">Calculate Salary</button>
-<div class="green" id="salary"></div>
-
-<button style="margin-top:6px;background:#dc2626" onclick="resetMonth()">Reset This Month</button>
-</div>
-
-<div class="footer">Ronnie Ruchal • Payroll System</div>
+<div id="report" class="hide"></div>
 </div>
 
 <script>
-const KEY="ronnie_v130";
-const dateSel=document.getElementById("dateSel");
+let data = JSON.parse(localStorage.getItem("otData")||"[]");
+let rate = localStorage.getItem("rate");
 
-for(let i=0;i<4;i++){
- let d=new Date();d.setDate(d.getDate()-i);
- let v=d.toISOString().slice(0,10);
- let t=i==0?"Today":i+" day ago";
- dateSel.innerHTML+=`<option value="${v}">${t} (${v})</option>`;
+const outWeekday = ["5:30","6:00","6:30","7:00","7:30","8:00","8:30","9:00","9:30","10:00","10:30","11:00","11:30","12:00"];
+const outHoliday = ["5:30","6:00","6:30","7:00","7:30","8:00","8:30","9:00"];
+
+function mins(t){
+ let p=t.split(":"); return parseInt(p[0])*60+parseInt(p[1]);
 }
 
-day.onchange=()=>{
- workedRow.style.display=["saturday","sunday","holiday"].includes(day.value)?"block":"none";
-};
-worked.onchange=()=>timeRow.style.display=worked.value==="yes"?"block":"none";
-
-function hours(out){
- let m=out==="24:00"?1440:+out.split(":")[0]*60+ +out.split(":")[1];
- return Math.max(0,(m-(17*60+30))/60);
+function refreshOut(){
+ let d=document.getElementById("dayType").value;
+ let box=document.getElementById("outTime");
+ let workedBox=document.getElementById("workedBox");
+ box.innerHTML="";
+ let arr=(d==="weekday")?outWeekday:outHoliday;
+ arr.forEach(t=>{
+   let o=document.createElement("option");
+   o.value=t;o.text=t;box.appendChild(o);
+ });
+ workedBox.classList=(d==="weekday")?"hide":"";
 }
 
-function save(){
- let data=JSON.parse(localStorage.getItem(KEY))||[];
- let date=dateSel.value;
- if(data.find(d=>d.date===date)){alert("Already saved");return;}
- let h=0,status="No Work";
- if(["saturday","sunday","holiday"].includes(day.value)){
-   if(worked.value==="yes"){h=hours(out.value);status="Worked";}
- }else{
-   h=hours(out.value);status=h>0?"OT":"No OT";
+document.getElementById("dayType").onchange=refreshOut;
+refreshOut();
+
+function saveRate(){
+ rate=document.getElementById("rate").value;
+ localStorage.setItem("rate",rate);
+ document.getElementById("rateShow").innerText=rate;
+ document.getElementById("salaryBox").classList="hide";
+ document.getElementById("rateSaved").classList="";
+}
+
+function editRate(){
+ document.getElementById("salaryBox").classList="";
+ document.getElementById("rateSaved").classList="hide";
+}
+
+if(rate){
+ document.getElementById("rateShow").innerText=rate;
+ document.getElementById("salaryBox").classList="hide";
+ document.getElementById("rateSaved").classList="";
+}
+
+function saveEntry(){
+ let day=document.getElementById("dayType").value;
+ let off=parseInt(document.getElementById("dateOffset").value);
+ let date=new Date(); date.setDate(date.getDate()-off);
+ let key=date.toDateString();
+ if(data.find(e=>e.key===key)) return alert("Already saved");
+
+ let worked="yes";
+ if(day!=="weekday") worked=document.getElementById("worked").value;
+ let out=document.getElementById("outTime").value;
+ let hours=0;
+
+ if(day==="weekday"){
+   hours=Math.max(0,(mins(out)-mins("5:30"))/60);
  }
- data.push({id:Date.now(),date,day:day.value,status,h});
- localStorage.setItem(KEY,JSON.stringify(data));
+ else{
+   if(worked==="yes"){
+     hours=8+Math.max(0,(mins(out)-mins("5:30"))/60);
+   }
+ }
+
+ data.push({key,day,out,worked,hours});
+ localStorage.setItem("otData",JSON.stringify(data));
  render();
 }
 
 function render(){
- let data=JSON.parse(localStorage.getItem(KEY))||[];
- list.innerHTML="";
- data.forEach(d=>{
- list.innerHTML+=`<tr>
- <td>${d.date}</td>
- <td>${d.day}</td>
- <td><span class="badge">${d.status}</span></td>
- <td>${d.h.toFixed(2)}</td>
- <td><button class="del" onclick="del(${d.id})">Del</button></td>
- </tr>`;
+ let h=document.getElementById("history");
+ h.innerHTML="";
+ data.forEach((e,i)=>{
+   let tr=document.createElement("tr");
+   if(e.day!=="weekday") tr.classList.add("red");
+   tr.innerHTML=`<td>${e.key}</td><td>${e.day}</td><td>${e.hours}</td>
+   <td><button onclick="del(${i})">X</button></td>`;
+   h.appendChild(tr);
  });
- report();
 }
-
-function del(id){
- let data=JSON.parse(localStorage.getItem(KEY))||[];
- data=data.filter(d=>d.id!==id);
- localStorage.setItem(KEY,JSON.stringify(data));
- render();
-}
-
-function report(){
- let data=JSON.parse(localStorage.getItem(KEY))||[];
- let c={sat:0,sun:0,hol:0,ot:0};
- data.forEach(d=>{
- if(d.day==="saturday"&&d.status==="Worked")c.sat++;
- if(d.day==="sunday"&&d.status==="Worked")c.sun++;
- if(d.day==="holiday"&&d.status==="Worked")c.hol++;
- if(d.day==="weekday")c.ot+=d.h;
- });
- counts.innerHTML=
- `Weekday OT hours: ${c.ot.toFixed(2)}<br>
-  Saturday worked: ${c.sat}<br>
-  Sunday worked: ${c.sun}<br>
-  Public holiday: ${c.hol}`;
-}
-
-function calc(){
- let r=+rate.value;
- let data=JSON.parse(localStorage.getItem(KEY))||[];
- let total=0;
- data.forEach(d=>{
- if(d.day==="weekday") total+=d.h*r*1.5;
- if(d.day==="saturday"&&d.status==="Worked") total+=8*r*1.5;
- if(d.day==="holiday"&&d.status==="Worked") total+=8*r*1.5;
- if(d.day==="sunday"&&d.status==="Worked") total+=d.h*r*1.5;
- if(d.day==="sunday"&&d.status==="No Work") total+=8*r;
- });
- salary.innerText="₩ "+Math.round(total);
-}
-
-function resetMonth(){
- if(!confirm("Reset this month data?"))return;
- localStorage.removeItem(KEY);
+function del(i){
+ data.splice(i,1);
+ localStorage.setItem("otData",JSON.stringify(data));
  render();
 }
 render();
+
+function showReport(){
+ let r=document.getElementById("report");
+ let wd=0,sa=0,su=0,ho=0;
+ data.forEach(e=>{
+   if(e.day==="weekday") wd+=e.hours;
+   if(e.day==="saturday"&&e.worked==="yes") sa++;
+   if(e.day==="sunday"&&e.worked==="yes") su++;
+   if(e.day==="holiday"&&e.worked==="yes") ho++;
+ });
+ r.innerHTML=`
+ <p>Weekday OT hours: ${wd}</p>
+ <p>Saturday worked days: ${sa}</p>
+ <p>Sunday worked days: ${su}</p>
+ <p>Public holiday worked days: ${ho}</p>
+ `;
+ r.classList="";
+}
 </script>
 </body>
 </html>
