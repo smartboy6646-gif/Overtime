@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ne">
 <head>
@@ -8,183 +7,196 @@
 
 <style>
 body{
-    margin:0;
-    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto;
-    background:#f1f5f9;
+  margin:0;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto;
+  background:#f1f5f9;
 }
 .app{
-    max-width:420px;
-    margin:auto;
-    background:#fff;
-    padding:18px;
-    border-radius:18px;
-    margin-top:15px;
-    box-shadow:0 10px 25px rgba(0,0,0,.1);
+  max-width:420px;
+  margin:auto;
+  background:#fff;
+  padding:18px;
+  border-radius:18px;
+  margin-top:15px;
+  box-shadow:0 10px 25px rgba(0,0,0,.1);
 }
 h2{text-align:center;color:#1e3a8a;margin-bottom:4px}
 .sub{text-align:center;font-size:13px;color:#64748b;margin-bottom:15px}
-
 label{font-weight:600;color:#1e40af}
-select{
-    width:100%;
-    padding:12px;
-    font-size:18px;
-    margin-top:8px;
-    border:2px solid #3b82f6;
-    border-radius:10px;
-    background:#fff;
+
+select,input[type=time]{
+  width:100%;
+  padding:12px;
+  font-size:18px;
+  margin-top:8px;
+  border:2px solid #3b82f6;
+  border-radius:10px;
 }
 
 button{
-    width:100%;
-    padding:14px;
-    border:none;
-    border-radius:12px;
-    background:#2563eb;
-    color:#fff;
-    font-size:16px;
-    font-weight:700;
-    margin-top:15px;
+  width:100%;
+  padding:14px;
+  border:none;
+  border-radius:12px;
+  background:#2563eb;
+  color:#fff;
+  font-size:16px;
+  font-weight:700;
+  margin-top:12px;
+}
+
+.shortcut{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  margin-top:10px;
+}
+.shortcut button{
+  flex:1 1 30%;
+  background:#e0e7ff;
+  color:#1e40af;
+  font-size:14px;
 }
 
 .summary{
-    background:#0f172a;
-    color:#fff;
-    text-align:center;
-    padding:15px;
-    border-radius:14px;
-    margin-top:18px;
+  background:#0f172a;
+  color:#fff;
+  text-align:center;
+  padding:15px;
+  border-radius:14px;
+  margin-top:18px;
 }
-.total{
-    font-size:32px;
-    font-weight:800;
-    color:#4ade80;
-}
+.total{font-size:30px;font-weight:800;color:#4ade80}
 
 table{width:100%;margin-top:18px;border-collapse:collapse}
 th,td{padding:10px;font-size:14px;border-bottom:1px solid #e5e7eb}
-th{color:#94a3b8;font-size:11px}
+th{font-size:11px;color:#94a3b8}
 .ot{color:#ef4444;font-weight:700}
 
 .del{
-    background:#fee2e2;
-    color:#ef4444;
-    border:none;
-    padding:5px 8px;
-    border-radius:6px;
-    font-size:12px;
+  background:#fee2e2;
+  color:#ef4444;
+  border:none;
+  padding:5px 8px;
+  border-radius:6px;
+  font-size:12px;
 }
-
 .clear{
-    background:none;
-    color:#94a3b8;
-    font-size:11px;
-    margin-top:20px;
+  background:none;
+  color:#94a3b8;
+  font-size:11px;
+  margin-top:18px;
 }
 </style>
 </head>
 
 <body>
 <div class="app">
-    <h2>Overtime Note 🕒</h2>
-    <div class="sub">Duty: 8:00 AM – 5:30 PM</div>
+<h2>Overtime Note 🕒</h2>
+<div class="sub">Duty: 8:00 AM – 5:30 PM</div>
 
-    <label>Out Time (PM)</label>
-    <select id="outTime">
-        <option value="">Select OT Time</option>
-        <option value="19:00">7:00 PM</option>
-        <option value="19:30">7:30 PM</option>
-        <option value="20:00">8:00 PM</option>
-        <option value="20:30">8:30 PM</option>
-        <option value="21:00">9:00 PM</option>
-        <option value="22:00">10:00 PM</option>
-    </select>
+<label>Quick OT Time (PM)</label>
+<div class="shortcut">
+  <button onclick="pick('19:00')">7:00</button>
+  <button onclick="pick('19:30')">7:30</button>
+  <button onclick="pick('20:00')">8:00</button>
+  <button onclick="pick('20:30')">8:30</button>
+  <button onclick="pick('21:00')">9:00</button>
+  <button onclick="pick('22:00')">10:00</button>
+</div>
 
-    <button onclick="saveOT()">Save OT</button>
+<label style="margin-top:12px">Custom Time (PM)</label>
+<input type="time" id="customTime">
 
-    <div class="summary">
-        Total OT
-        <div class="total" id="total">0.00 hrs</div>
-    </div>
+<button onclick="saveOT()">Save Today OT</button>
 
-    <table>
-        <thead>
-            <tr>
-                <th>Date</th>
-                <th>Out Time</th>
-                <th>OT</th>
-                <th></th>
-            </tr>
-        </thead>
-        <tbody id="list"></tbody>
-    </table>
+<div class="summary">
+  Total OT
+  <div class="total" id="total">0.00 hrs</div>
+</div>
 
-    <button class="clear" onclick="clearAll()">Clear All</button>
+<table>
+<thead>
+<tr><th>Date</th><th>Out</th><th>OT</th><th></th></tr>
+</thead>
+<tbody id="list"></tbody>
+</table>
+
+<button class="clear" onclick="clearAll()">Clear All</button>
 </div>
 
 <script>
-const KEY="ot_note_final";
+const KEY="ot_one_per_day";
+let selected=null;
+
+function pick(t){selected=t;alert("Selected "+to12(t));}
 
 function saveOT(){
-    const t=document.getElementById("outTime").value;
-    if(!t){alert("OT time select garnu");return}
+  let t=selected || document.getElementById("customTime").value;
+  if(!t){alert("OT time select garnu");return;}
 
-    const [h,m]=t.split(":").map(Number);
-    const duty=17*60+30;
-    const user=h*60+m;
+  const today=new Date().toLocaleDateString("en-GB");
+  let data=JSON.parse(localStorage.getItem(KEY))||[];
 
-    const ot=((user-duty)/60).toFixed(2);
-    const date=new Date().toLocaleDateString("en-GB");
+  if(data.find(e=>e.date===today)){
+    alert("Aaja OT already save bhaisakyo");
+    return;
+  }
 
-    const data=JSON.parse(localStorage.getItem(KEY))||[];
-    data.push({
-        id:Date.now(),
-        date:date,
-        time:to12(t),
-        ot:ot
-    });
+  const [h,m]=t.split(":").map(Number);
+  const duty=17*60+30;
+  const ot=((h*60+m-duty)/60).toFixed(2);
 
-    localStorage.setItem(KEY,JSON.stringify(data));
-    show();
+  data.push({id:Date.now(),date:today,time:to12(t),ot});
+  localStorage.setItem(KEY,JSON.stringify(data));
+  show();
 }
 
 function to12(t){
-    let [h,m]=t.split(":").map(Number);
-    let hr=h%12||12;
-    return hr+":"+m.toString().padStart(2,"0")+" PM";
+  let [h,m]=t.split(":").map(Number);
+  return (h%12||12)+":"+m.toString().padStart(2,"0")+" PM";
 }
 
 function show(){
-    const data=JSON.parse(localStorage.getItem(KEY))||[];
-    let html="",total=0;
-
-    data.slice().reverse().forEach(e=>{
-        total+=parseFloat(e.ot);
-        html+=`
-        <tr>
-            <td>${e.date}</td>
-            <td>${e.time}</td>
-            <td class="ot">${e.ot}</td>
-            <td><button class="del" onclick="del(${e.id})">Del</button></td>
-        </tr>`;
-    });
-
-    document.getElementById("list").innerHTML=html;
-    document.getElementById("total").innerText=total.toFixed(2)+" hrs";
+  let data=JSON.parse(localStorage.getItem(KEY))||[];
+  let html="",total=0;
+  data.slice().reverse().forEach(e=>{
+    total+=parseFloat(e.ot);
+    html+=`
+    <tr>
+      <td>${e.date}</td>
+      <td>${e.time}</td>
+      <td class="ot">${e.ot}</td>
+      <td><button class="del" onclick="del(${e.id})">Del</button></td>
+    </tr>`;
+  });
+  document.getElementById("list").innerHTML=html;
+  document.getElementById("total").innerText=total.toFixed(2)+" hrs";
 }
 
 function del(id){
-    let d=JSON.parse(localStorage.getItem(KEY))||[];
-    d=d.filter(x=>x.id!==id);
-    localStorage.setItem(KEY,JSON.stringify(d));
-    show();
+  let d=JSON.parse(localStorage.getItem(KEY))||[];
+  d=d.filter(x=>x.id!==id);
+  localStorage.setItem(KEY,JSON.stringify(d));
+  show();
 }
 
 function clearAll(){
-    if(confirm("Sabai OT delete garne?")){
-        localStorage.removeItem(KEY);
-        show();
+  if(confirm("Sabai OT delete garne?")){
+    localStorage.removeItem(KEY);
+    show();
+  }
+}
+
+// 10 PM reminder (iPhone works after Add to Home Screen)
+if("Notification"in window){
+  Notification.requestPermission();
+  setInterval(()=>{
+    let n=new Date();
+    if(n.getHours()===22 && n.getMinutes()===0){
+      new Notification("OT Reminder","Don't forget to save today's OT");
     }
+  },60000);
 }
 
 show();
