@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>OT Note</title>
+<title>Overtime Note</title>
 
 <style>
 body{
@@ -24,13 +24,18 @@ h2{text-align:center;color:#1e3a8a;margin-bottom:4px}
 .sub{text-align:center;font-size:13px;color:#64748b;margin-bottom:15px}
 label{font-weight:600;color:#1e40af}
 
-select,input[type=time]{
+select{
   width:100%;
-  padding:12px;
-  font-size:18px;
+  padding:10px;
+  font-size:16px;
   margin-top:8px;
   border:2px solid #3b82f6;
   border-radius:10px;
+}
+
+.small{
+  padding:8px;
+  font-size:15px;
 }
 
 button{
@@ -95,6 +100,9 @@ th{font-size:11px;color:#94a3b8}
 <h2>Overtime Note 🕒</h2>
 <div class="sub">Duty: 8:00 AM – 5:30 PM</div>
 
+<label>OT Date</label>
+<select id="otDate" class="small"></select>
+
 <label>Quick OT Time (PM)</label>
 <div class="shortcut">
   <button onclick="pick('19:00')">7:00</button>
@@ -105,10 +113,23 @@ th{font-size:11px;color:#94a3b8}
   <button onclick="pick('22:00')">10:00</button>
 </div>
 
-<label style="margin-top:12px">Custom Time (PM)</label>
-<input type="time" id="customTime">
+<label style="margin-top:12px">Custom Time (30 min gap)</label>
+<select id="customTime" class="small">
+  <option value="">Select Time</option>
+  <option value="18:00">6:00 PM</option>
+  <option value="18:30">6:30 PM</option>
+  <option value="19:00">7:00 PM</option>
+  <option value="19:30">7:30 PM</option>
+  <option value="20:00">8:00 PM</option>
+  <option value="20:30">8:30 PM</option>
+  <option value="21:00">9:00 PM</option>
+  <option value="21:30">9:30 PM</option>
+  <option value="22:00">10:00 PM</option>
+  <option value="22:30">10:30 PM</option>
+  <option value="23:00">11:00 PM</option>
+</select>
 
-<button onclick="saveOT()">Save Today OT</button>
+<button onclick="saveOT()">Save OT</button>
 
 <div class="summary">
   Total OT
@@ -126,20 +147,35 @@ th{font-size:11px;color:#94a3b8}
 </div>
 
 <script>
-const KEY="ot_one_per_day";
-let selected=null;
+const KEY="ot_final_v2";
+let selectedTime=null;
 
-function pick(t){selected=t;alert("Selected "+to12(t));}
+function setupDates(){
+  const sel=document.getElementById("otDate");
+  sel.innerHTML="";
+  for(let i=0;i<=3;i++){
+    let d=new Date();
+    d.setDate(d.getDate()-i);
+    let val=d.toLocaleDateString("en-GB");
+    let txt=i===0?"Today":i===1?"Yesterday":`${i} days ago`;
+    sel.innerHTML+=`<option value="${val}">${txt} (${val})</option>`;
+  }
+}
+
+function pick(t){
+  selectedTime=t;
+  alert("Selected "+to12(t));
+}
 
 function saveOT(){
-  let t=selected || document.getElementById("customTime").value;
+  const date=document.getElementById("otDate").value;
+  const t=selectedTime || document.getElementById("customTime").value;
   if(!t){alert("OT time select garnu");return;}
 
-  const today=new Date().toLocaleDateString("en-GB");
   let data=JSON.parse(localStorage.getItem(KEY))||[];
 
-  if(data.find(e=>e.date===today)){
-    alert("Aaja OT already save bhaisakyo");
+  if(data.find(e=>e.date===date)){
+    alert("Yo date ko OT already save bhaisakyo");
     return;
   }
 
@@ -147,8 +183,10 @@ function saveOT(){
   const duty=17*60+30;
   const ot=((h*60+m-duty)/60).toFixed(2);
 
-  data.push({id:Date.now(),date:today,time:to12(t),ot});
+  data.push({id:Date.now(),date,time:to12(t),ot});
   localStorage.setItem(KEY,JSON.stringify(data));
+  selectedTime=null;
+  document.getElementById("customTime").value="";
   show();
 }
 
@@ -160,6 +198,7 @@ function to12(t){
 function show(){
   let data=JSON.parse(localStorage.getItem(KEY))||[];
   let html="",total=0;
+
   data.slice().reverse().forEach(e=>{
     total+=parseFloat(e.ot);
     html+=`
@@ -170,14 +209,17 @@ function show(){
       <td><button class="del" onclick="del(${e.id})">Del</button></td>
     </tr>`;
   });
+
   document.getElementById("list").innerHTML=html;
   document.getElementById("total").innerText=total.toFixed(2)+" hrs";
 }
 
 function del(id){
   let d=JSON.parse(localStorage.getItem(KEY))||[];
+  let removed=d.find(x=>x.id===id);
   d=d.filter(x=>x.id!==id);
   localStorage.setItem(KEY,JSON.stringify(d));
+  alert("Yo date ko OT delete bhayo, aba feri save garna milchha");
   show();
 }
 
@@ -188,17 +230,7 @@ function clearAll(){
   }
 }
 
-// 10 PM reminder (iPhone works after Add to Home Screen)
-if("Notification"in window){
-  Notification.requestPermission();
-  setInterval(()=>{
-    let n=new Date();
-    if(n.getHours()===22 && n.getMinutes()===0){
-      new Notification("OT Reminder","Don't forget to save today's OT");
-    }
-  },60000);
-}
-
+setupDates();
 show();
 </script>
 </body>
