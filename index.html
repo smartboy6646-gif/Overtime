@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>Ronnie Ruchal Payroll v1.6</title>
+<title>Ronnie Ruchal Payroll v1.7</title>
 <style>
 body{margin:0;font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#eef4fb;}
 .container{max-width:420px;margin:auto;padding:14px;}
@@ -31,7 +31,7 @@ td{padding:10px 2px; border-bottom: 1px solid #f1f1f1; text-align: center;}
 
 <div class="container">
 <h2>Ronnie Ruchal</h2>
-<p style="text-align:center; margin-top:-8px; font-size:11px; color:#666;">OT & Payroll System • v1.6.0</p>
+<p style="text-align:center; margin-top:-8px; font-size:11px; color:#666;">OT & Payroll System • v1.7.0</p>
 
 <div class="card">
   <label>Day Type (दिनको प्रकार)</label>
@@ -59,9 +59,7 @@ td{padding:10px 2px; border-bottom: 1px solid #f1f1f1; text-align: center;}
 
   <div id="outBox">
     <label>Out Time (काम सकिएको समय)</label>
-    <select id="outTime">
-      <option value="5:30 PM">5:30 PM (No OT)</option>
-    </select>
+    <select id="outTime"></select>
   </div>
 
   <button onclick="saveEntry()">Save Day (सेभ गर्नुहोस्)</button>
@@ -94,10 +92,12 @@ td{padding:10px 2px; border-bottom: 1px solid #f1f1f1; text-align: center;}
 </div>
 
 <script>
-const STORE_KEY="ronnie_payroll_v1.6";
+const STORE_KEY="ronnie_payroll_v1.7";
 let entries=JSON.parse(localStorage.getItem(STORE_KEY)||"[]");
 
-const times=["5:30 PM","6:00 PM","6:30 PM","7:00 PM","7:30 PM","8:00 PM","8:30 PM","9:00 PM","9:30 PM","10:00 PM","10:30 PM","11:00 PM","11:30 PM","12:00 AM"];
+// Time Slots: Added 30 min gaps between 5:30 PM and 9:00 PM
+const weekdayTimes=["5:30 PM","6:00 PM","6:30 PM","7:00 PM","7:30 PM","8:00 PM","8:30 PM","9:00 PM","9:30 PM","10:00 PM","10:30 PM","11:00 PM","11:30 PM","12:00 AM"];
+const weekendTimes=["5:30 PM","6:00 PM","6:30 PM","7:00 PM","7:30 PM","8:00 PM","8:30 PM","9:00 PM"];
 
 function timeToMins(t) {
     let [time, mod] = t.split(' ');
@@ -114,14 +114,17 @@ function updateUI(){
   let worked=document.getElementById("worked").value;
   let out=document.getElementById("outTime");
   out.innerHTML="";
-  times.forEach(t=>{ let o=document.createElement("option"); o.value=t; o.text=t; out.appendChild(o); });
+  
+  let currentTimes = (day === "weekday") ? weekdayTimes : weekendTimes;
+  currentTimes.forEach(t=>{ let o=document.createElement("option"); o.value=t; o.text=t; out.appendChild(o); });
 
   if(day==="weekday") {
       document.getElementById("workedBox").classList.add("hide");
       document.getElementById("outBox").classList.remove("hide");
   } else {
     document.getElementById("workedBox").classList.remove("hide");
-    if(worked==="no" && day!=="sunday") document.getElementById("outBox").classList.add("hide");
+    // Hide Out Time if not worked on Sat/Sun/Holiday
+    if(worked==="no") document.getElementById("outBox").classList.add("hide");
     else document.getElementById("outBox").classList.remove("hide");
   }
 }
@@ -140,18 +143,19 @@ function saveEntry(){
   let normalOt = 0, nightOt = 0, basicHrs = 0;
 
   if(day === "weekday") {
-    basicHrs = 8; // Auto 8 hrs for Mon-Fri
+    basicHrs = 8;
     if(workedVal === "yes") {
       let outMins = timeToMins(outVal);
       normalOt = Math.max(0, (Math.min(outMins, 1320) - 1050) / 60);
       nightOt = Math.max(0, (outMins - 1320) / 60);
     }
   } else {
-    // Saturday, Sunday, Holiday
-    if(day === "sunday") basicHrs = 8; // Sunday bida ko basic
+    if(day === "sunday") basicHrs = 8;
     if(workedVal === "yes") {
       let outMins = timeToMins(outVal);
-      normalOt = Math.max(0, (Math.min(outMins, 1320) - 1050) / 60);
+      // Weekend worked: Whole day (8-5:30) is 8 hrs OT + extra OT after 5:30
+      let extraOtAfterFiveThirty = Math.max(0, (Math.min(outMins, 1320) - 1050) / 60);
+      normalOt = 8 + extraOtAfterFiveThirty; 
       nightOt = Math.max(0, (outMins - 1320) / 60);
     }
   }
@@ -169,12 +173,8 @@ function calculateSalary() {
   entries.forEach(e => {
     let dayPay = (e.basicHrs * rate); 
     if (e.worked === "yes") {
-      if (e.day === "weekday") {
-        dayPay += (e.normalOt * rate * 1.5) + (e.nightOt * rate * 3.0);
-      } else {
-        // Weekend/Holiday: Basic (if any) + 1.5x for first 8hrs + 1.5x OT + 3x Night
-        dayPay += (8 * rate * 1.5) + (e.normalOt * rate * 1.5) + (e.nightOt * rate * 3.0);
-      }
+      // 1.5x for Normal OT and 3x for Night OT
+      dayPay += (e.normalOt * rate * 1.5) + (e.nightOt * rate * 3.0);
     }
     totalPay += dayPay;
   });
@@ -189,7 +189,6 @@ function renderHistory(){
   entries.forEach((e,i)=>{
     if(e.day==="weekday") wBasic += e.basicHrs;
     else if(e.day==="sunday") sunHolB += e.basicHrs;
-
     nOT += e.normalOt;
     niOT += e.nightOt;
 
