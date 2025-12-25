@@ -64,7 +64,6 @@ th,td{
   border-bottom:1px solid #e0e0e0;
   text-align:center;
 }
-th{color:#555}
 .red{color:#d32f2f;font-weight:600}
 </style>
 </head>
@@ -76,7 +75,7 @@ th{color:#555}
 <!-- SALARY -->
 <div class="card" id="salaryBox">
 <label>Hourly Rate (₩)</label>
-<input type="number" id="rateInput" inputmode="numeric" placeholder="Enter hourly rate">
+<input type="number" id="rateInput" placeholder="Enter hourly rate">
 <button onclick="saveRate()">Save Rate</button>
 </div>
 
@@ -106,14 +105,16 @@ th{color:#555}
 
 <div id="workedBox" class="hide">
   <label>Worked?</label>
-  <select id="worked">
+  <select id="worked" onchange="updateUI()">
     <option value="yes">Yes</option>
     <option value="no">No</option>
   </select>
 </div>
 
-<label>Out Time</label>
-<select id="outTime"></select>
+<div id="outTimeBox">
+  <label>Out Time</label>
+  <select id="outTime"></select>
+</div>
 
 <button onclick="saveEntry()">Save Entry</button>
 </div>
@@ -140,6 +141,7 @@ th{color:#555}
 /* ===== DATA ===== */
 let data = JSON.parse(localStorage.getItem("otData") || "[]");
 let rate = localStorage.getItem("rate");
+let rateLocked = localStorage.getItem("rateLocked");
 
 /* ===== TIME OPTIONS ===== */
 const weekdayTimes = ["5:30","6:00","6:30","7:00","7:30","8:00","8:30","9:00","9:30","10:00","10:30","11:00","11:30","12:00"];
@@ -149,9 +151,9 @@ const toMin = t => {
   let p=t.split(":"); return (+p[0])*60+(+p[1]);
 };
 
-/* ===== SALARY UI ===== */
+/* ===== SALARY UI (FIXED) ===== */
 function applySalaryUI(){
-  if(rate){
+  if(rate && rateLocked==="yes"){
     document.getElementById("salaryBox").classList.add("hide");
     document.getElementById("rateSaved").classList.remove("hide");
     document.getElementById("rateText").innerText = rate;
@@ -165,11 +167,12 @@ function saveRate(){
   if(!v) return alert("Enter hourly rate");
   rate=v;
   localStorage.setItem("rate",rate);
+  localStorage.setItem("rateLocked","yes");
   applySalaryUI();
 }
 function changeRate(){
-  rate=null;
-  localStorage.removeItem("rate");
+  localStorage.removeItem("rateLocked");
+  rateLocked=null;
   applySalaryUI();
 }
 
@@ -178,14 +181,27 @@ function updateUI(){
   const day=document.getElementById("dayType").value;
   const out=document.getElementById("outTime");
   const workedBox=document.getElementById("workedBox");
+  const outBox=document.getElementById("outTimeBox");
+  const worked=document.getElementById("worked").value;
+
   out.innerHTML="";
   const arr = (day==="weekday") ? weekdayTimes : holidayTimes;
   arr.forEach(t=>{
     const o=document.createElement("option");
     o.value=t;o.text=t; out.appendChild(o);
   });
-  if(day==="weekday") workedBox.classList.add("hide");
-  else workedBox.classList.remove("hide");
+
+  if(day==="weekday"){
+    workedBox.classList.add("hide");
+    outBox.classList.remove("hide");
+  }else{
+    workedBox.classList.remove("hide");
+    if(worked==="no"){
+      outBox.classList.add("hide");
+    }else{
+      outBox.classList.remove("hide");
+    }
+  }
 }
 
 /* ===== SAVE ENTRY ===== */
@@ -202,18 +218,18 @@ function saveEntry(){
   let worked="yes";
   if(day!=="weekday") worked=document.getElementById("worked").value;
 
-  const out=document.getElementById("outTime").value;
   let hours=0;
-
   if(day==="weekday"){
+    const out=document.getElementById("outTime").value;
     hours=Math.max(0,(toMin(out)-toMin("5:30"))/60);
   }else{
     if(worked==="yes"){
+      const out=document.getElementById("outTime").value;
       hours=8+Math.max(0,(toMin(out)-toMin("5:30"))/60);
     }
   }
 
-  data.push({key,day,worked,out,hours});
+  data.push({key,day,worked,hours});
   localStorage.setItem("otData",JSON.stringify(data));
   render();
 }
