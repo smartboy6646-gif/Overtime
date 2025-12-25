@@ -6,90 +6,150 @@
 <title>Ronnie Ruchal – OT Tracker</title>
 
 <style>
-body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#f2f2f2;margin:0}
-.container{max-width:420px;margin:auto;padding:15px}
-h2{text-align:center}
-select,input,button{width:100%;padding:10px;margin:6px 0;font-size:16px}
-button{background:#111;color:#fff;border:none;border-radius:6px}
-table{width:100%;border-collapse:collapse;margin-top:10px;font-size:14px}
-th,td{border-bottom:1px solid #ccc;padding:6px;text-align:center}
-.red{color:#c00;font-weight:600}
+:root{
+  --blue:#1e88e5;
+  --blue-dark:#1565c0;
+  --bg:#eef4fb;
+}
+body{
+  margin:0;
+  font-family:-apple-system,BlinkMacSystemFont,sans-serif;
+  background:var(--bg);
+}
+.container{
+  max-width:420px;
+  margin:auto;
+  padding:14px;
+}
+.card{
+  background:#fff;
+  border-radius:12px;
+  padding:14px;
+  margin-bottom:12px;
+  box-shadow:0 4px 12px rgba(0,0,0,.08);
+}
+h2{
+  text-align:center;
+  color:var(--blue-dark);
+  margin:8px 0 14px;
+}
+label{
+  font-size:13px;
+  color:#444;
+}
+select,input,button{
+  width:100%;
+  padding:11px;
+  margin-top:6px;
+  font-size:16px;
+  border-radius:8px;
+  border:1px solid #cfd8dc;
+}
+button{
+  background:var(--blue);
+  color:#fff;
+  border:none;
+}
+button:active{background:var(--blue-dark)}
 .hide{display:none}
 .small{font-size:12px;color:#555}
+
+table{
+  width:100%;
+  border-collapse:collapse;
+  font-size:14px;
+}
+th,td{
+  padding:8px 4px;
+  border-bottom:1px solid #e0e0e0;
+  text-align:center;
+}
+th{color:#555}
+.red{color:#d32f2f;font-weight:600}
 </style>
 </head>
 
 <body>
 <div class="container">
-<h2>Ronnie Ruchal – OT Tracker</h2>
+<h2>OT & Salary Tracker</h2>
 
-<!-- Salary -->
-<div id="salaryBox">
-<input type="number" id="rateInput" placeholder="Hourly rate ₩">
+<!-- SALARY -->
+<div class="card" id="salaryBox">
+<label>Hourly Rate (₩)</label>
+<input type="number" id="rateInput" inputmode="numeric" placeholder="Enter hourly rate">
 <button onclick="saveRate()">Save Rate</button>
 </div>
 
-<div id="rateSaved" class="hide small">
-Hourly Rate: ₩<span id="rateText"></span>
-<button onclick="changeRate()">Change Rate</button>
+<div class="card hide" id="rateSaved">
+<div class="small">Hourly Rate</div>
+<b>₩ <span id="rateText"></span></b>
+<button style="margin-top:8px" onclick="changeRate()">Change Rate</button>
 </div>
 
-<hr>
-
-<!-- Entry -->
+<!-- ENTRY -->
+<div class="card">
+<label>Day Type</label>
 <select id="dayType" onchange="updateUI()">
-<option value="weekday">Weekday</option>
-<option value="saturday">Saturday</option>
-<option value="sunday">Sunday</option>
-<option value="holiday">Public Holiday</option>
+  <option value="weekday">Weekday</option>
+  <option value="saturday">Saturday</option>
+  <option value="sunday">Sunday</option>
+  <option value="holiday">Public Holiday</option>
 </select>
 
+<label>Date</label>
 <select id="dateOffset">
-<option value="0">Today</option>
-<option value="1">1 day ago</option>
-<option value="2">2 days ago</option>
-<option value="3">3 days ago</option>
+  <option value="0">Today</option>
+  <option value="1">1 day ago</option>
+  <option value="2">2 days ago</option>
+  <option value="3">3 days ago</option>
 </select>
 
 <div id="workedBox" class="hide">
-<select id="worked">
-<option value="yes">Worked</option>
-<option value="no">Did not work</option>
-</select>
+  <label>Worked?</label>
+  <select id="worked">
+    <option value="yes">Yes</option>
+    <option value="no">No</option>
+  </select>
 </div>
 
+<label>Out Time</label>
 <select id="outTime"></select>
 
-<button onclick="saveEntry()">Save</button>
+<button onclick="saveEntry()">Save Entry</button>
+</div>
 
-<!-- History -->
+<!-- HISTORY -->
+<div class="card">
 <table>
 <thead>
 <tr><th>Date</th><th>Day</th><th>Hours</th><th>X</th></tr>
 </thead>
 <tbody id="history"></tbody>
 </table>
+</div>
 
-<hr>
+<!-- REPORT -->
+<div class="card">
 <button onclick="showReport()">Monthly Report</button>
-<div id="report" class="small"></div>
+<div id="report" class="small" style="margin-top:8px"></div>
+</div>
+
 </div>
 
 <script>
-/* ---------- DATA ---------- */
+/* ===== DATA ===== */
 let data = JSON.parse(localStorage.getItem("otData") || "[]");
 let rate = localStorage.getItem("rate");
 
-/* ---------- TIME OPTIONS ---------- */
+/* ===== TIME OPTIONS ===== */
 const weekdayTimes = ["5:30","6:00","6:30","7:00","7:30","8:00","8:30","9:00","9:30","10:00","10:30","11:00","11:30","12:00"];
 const holidayTimes = ["5:30","6:00","6:30","7:00","7:30","8:00","8:30","9:00"];
 
-function toMin(t){
-  let p=t.split(":");
-  return (+p[0])*60+(+p[1]);
-}
+const toMin = t => {
+  let p=t.split(":"); return (+p[0])*60+(+p[1]);
+};
 
-/* ---------- SALARY UI ---------- */
+/* ===== SALARY UI ===== */
 function applySalaryUI(){
   if(rate){
     document.getElementById("salaryBox").classList.add("hide");
@@ -100,58 +160,49 @@ function applySalaryUI(){
     document.getElementById("rateSaved").classList.add("hide");
   }
 }
-
 function saveRate(){
-  let v=document.getElementById("rateInput").value;
+  const v=document.getElementById("rateInput").value;
   if(!v) return alert("Enter hourly rate");
   rate=v;
   localStorage.setItem("rate",rate);
   applySalaryUI();
 }
-
 function changeRate(){
   rate=null;
   localStorage.removeItem("rate");
   applySalaryUI();
 }
 
-/* ---------- UI UPDATE ---------- */
+/* ===== UI UPDATE ===== */
 function updateUI(){
-  let day=document.getElementById("dayType").value;
-  let out=document.getElementById("outTime");
-  let workedBox=document.getElementById("workedBox");
+  const day=document.getElementById("dayType").value;
+  const out=document.getElementById("outTime");
+  const workedBox=document.getElementById("workedBox");
   out.innerHTML="";
-
-  let arr = (day==="weekday") ? weekdayTimes : holidayTimes;
+  const arr = (day==="weekday") ? weekdayTimes : holidayTimes;
   arr.forEach(t=>{
-    let o=document.createElement("option");
-    o.value=t;o.text=t;
-    out.appendChild(o);
+    const o=document.createElement("option");
+    o.value=t;o.text=t; out.appendChild(o);
   });
-
-  if(day==="weekday"){
-    workedBox.classList.add("hide");
-  }else{
-    workedBox.classList.remove("hide");
-  }
+  if(day==="weekday") workedBox.classList.add("hide");
+  else workedBox.classList.remove("hide");
 }
 
-/* ---------- SAVE ENTRY ---------- */
+/* ===== SAVE ENTRY ===== */
 function saveEntry(){
-  let day=document.getElementById("dayType").value;
-  let off=+document.getElementById("dateOffset").value;
-  let date=new Date(); date.setDate(date.getDate()-off);
-  let key=date.toDateString();
+  const day=document.getElementById("dayType").value;
+  const off=+document.getElementById("dateOffset").value;
+  const date=new Date(); date.setDate(date.getDate()-off);
+  const key=date.toDateString();
 
   if(data.find(e=>e.key===key)){
-    alert("Already saved for this date");
-    return;
+    alert("Already saved for this date"); return;
   }
 
   let worked="yes";
   if(day!=="weekday") worked=document.getElementById("worked").value;
 
-  let out=document.getElementById("outTime").value;
+  const out=document.getElementById("outTime").value;
   let hours=0;
 
   if(day==="weekday"){
@@ -167,12 +218,12 @@ function saveEntry(){
   render();
 }
 
-/* ---------- RENDER ---------- */
+/* ===== RENDER ===== */
 function render(){
-  let h=document.getElementById("history");
+  const h=document.getElementById("history");
   h.innerHTML="";
   data.forEach((e,i)=>{
-    let tr=document.createElement("tr");
+    const tr=document.createElement("tr");
     if(e.day!=="weekday") tr.classList.add("red");
     tr.innerHTML=`
       <td>${e.key}</td>
@@ -182,14 +233,13 @@ function render(){
     h.appendChild(tr);
   });
 }
-
 function del(i){
   data.splice(i,1);
   localStorage.setItem("otData",JSON.stringify(data));
   render();
 }
 
-/* ---------- REPORT ---------- */
+/* ===== REPORT ===== */
 function showReport(){
   let wd=0,sa=0,su=0,ho=0;
   data.forEach(e=>{
@@ -205,7 +255,7 @@ function showReport(){
      Public holiday worked days: ${ho}`;
 }
 
-/* ---------- INIT ---------- */
+/* ===== INIT ===== */
 applySalaryUI();
 updateUI();
 render();
