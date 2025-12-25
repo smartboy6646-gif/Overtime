@@ -3,12 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>Ronnie Ruchal – OT Tracker</title>
+<title>OT Entry – Ronnie Ruchal</title>
 
 <style>
 :root{
   --blue:#1e88e5;
-  --blue-dark:#1565c0;
   --bg:#eef4fb;
 }
 body{
@@ -28,16 +27,9 @@ body{
   margin-bottom:12px;
   box-shadow:0 4px 12px rgba(0,0,0,.08);
 }
-h2{
-  text-align:center;
-  color:var(--blue-dark);
-  margin:8px 0 14px;
-}
-label{
-  font-size:13px;
-  color:#444;
-}
-select,input,button{
+h2{text-align:center;color:var(--blue)}
+label{font-size:13px;color:#444}
+select,button{
   width:100%;
   padding:11px;
   margin-top:6px;
@@ -50,40 +42,31 @@ button{
   color:#fff;
   border:none;
 }
-button:active{background:var(--blue-dark)}
-.hide{display:none}
-.small{font-size:12px;color:#555}
-
 table{
   width:100%;
   border-collapse:collapse;
   font-size:14px;
 }
 th,td{
-  padding:8px 4px;
-  border-bottom:1px solid #e0e0e0;
+  padding:6px;
+  border-bottom:1px solid #ddd;
   text-align:center;
 }
 .red{color:#d32f2f;font-weight:600}
+.small{font-size:12px;color:#555}
+.hide{display:none}
+textarea{
+  width:100%;
+  height:140px;
+  font-size:13px;
+  padding:8px;
+}
 </style>
 </head>
 
 <body>
 <div class="container">
-<h2>OT & Salary Tracker</h2>
-
-<!-- SALARY -->
-<div class="card" id="salaryBox">
-<label>Hourly Rate (₩)</label>
-<input type="number" id="rateInput" placeholder="Enter hourly rate">
-<button onclick="saveRate()">Save Rate</button>
-</div>
-
-<div class="card hide" id="rateSaved">
-<div class="small">Hourly Rate</div>
-<b>₩ <span id="rateText"></span></b>
-<button style="margin-top:8px" onclick="changeRate()">Change Rate</button>
-</div>
+<h2>OT Entry App</h2>
 
 <!-- ENTRY -->
 <div class="card">
@@ -104,16 +87,16 @@ th,td{
 </select>
 
 <div id="workedBox" class="hide">
-  <label>Worked?</label>
-  <select id="worked" onchange="updateUI()">
-    <option value="yes">Yes</option>
-    <option value="no">No</option>
-  </select>
+<label>Worked?</label>
+<select id="worked" onchange="updateUI()">
+  <option value="yes">Yes</option>
+  <option value="no">No</option>
+</select>
 </div>
 
-<div id="outTimeBox">
-  <label>Out Time</label>
-  <select id="outTime"></select>
+<div id="outBox">
+<label>Out Time</label>
+<select id="outTime"></select>
 </div>
 
 <button onclick="saveEntry()">Save Entry</button>
@@ -129,152 +112,92 @@ th,td{
 </table>
 </div>
 
-<!-- REPORT -->
+<!-- EXPORT -->
 <div class="card">
-<button onclick="showReport()">Monthly Report</button>
-<div id="report" class="small" style="margin-top:8px"></div>
+<button onclick="copyData()">Copy All Data</button>
+<textarea id="exportBox" class="hide"></textarea>
+<div class="small">Paste this into Salary Calculator App / Excel</div>
 </div>
 
 </div>
 
 <script>
-/* ===== DATA ===== */
-let data = JSON.parse(localStorage.getItem("otData") || "[]");
-let rate = localStorage.getItem("rate");
-let rateLocked = localStorage.getItem("rateLocked");
+let data = JSON.parse(localStorage.getItem("otEntries")||"[]");
 
-/* ===== TIME OPTIONS ===== */
-const weekdayTimes = ["5:30","6:00","6:30","7:00","7:30","8:00","8:30","9:00","9:30","10:00","10:30","11:00","11:30","12:00"];
-const holidayTimes = ["5:30","6:00","6:30","7:00","7:30","8:00","8:30","9:00"];
+const weekdayTimes=["5:30","6:00","6:30","7:00","7:30","8:00","8:30","9:00","9:30","10:00","10:30","11:00","11:30","12:00"];
+const holidayTimes=["5:30","6:00","6:30","7:00","7:30","8:00","8:30","9:00"];
 
-const toMin = t => {
-  let p=t.split(":"); return (+p[0])*60+(+p[1]);
-};
+const toMin=t=>{let p=t.split(":");return(+p[0])*60+(+p[1]);};
 
-/* ===== SALARY UI (FIXED) ===== */
-function applySalaryUI(){
-  if(rate && rateLocked==="yes"){
-    document.getElementById("salaryBox").classList.add("hide");
-    document.getElementById("rateSaved").classList.remove("hide");
-    document.getElementById("rateText").innerText = rate;
-  }else{
-    document.getElementById("salaryBox").classList.remove("hide");
-    document.getElementById("rateSaved").classList.add("hide");
-  }
-}
-function saveRate(){
-  const v=document.getElementById("rateInput").value;
-  if(!v) return alert("Enter hourly rate");
-  rate=v;
-  localStorage.setItem("rate",rate);
-  localStorage.setItem("rateLocked","yes");
-  applySalaryUI();
-}
-function changeRate(){
-  localStorage.removeItem("rateLocked");
-  rateLocked=null;
-  applySalaryUI();
-}
-
-/* ===== UI UPDATE ===== */
 function updateUI(){
-  const day=document.getElementById("dayType").value;
-  const out=document.getElementById("outTime");
-  const workedBox=document.getElementById("workedBox");
-  const outBox=document.getElementById("outTimeBox");
-  const worked=document.getElementById("worked").value;
-
-  out.innerHTML="";
-  const arr = (day==="weekday") ? weekdayTimes : holidayTimes;
+  let day=dayType.value;
+  outTime.innerHTML="";
+  let arr=(day==="weekday")?weekdayTimes:holidayTimes;
   arr.forEach(t=>{
-    const o=document.createElement("option");
-    o.value=t;o.text=t; out.appendChild(o);
+    let o=document.createElement("option");
+    o.value=t;o.text=t;outTime.appendChild(o);
   });
-
   if(day==="weekday"){
     workedBox.classList.add("hide");
     outBox.classList.remove("hide");
   }else{
     workedBox.classList.remove("hide");
-    if(worked==="no"){
-      outBox.classList.add("hide");
-    }else{
-      outBox.classList.remove("hide");
-    }
+    if(worked.value==="no") outBox.classList.add("hide");
+    else outBox.classList.remove("hide");
   }
 }
 
-/* ===== SAVE ENTRY ===== */
 function saveEntry(){
-  const day=document.getElementById("dayType").value;
-  const off=+document.getElementById("dateOffset").value;
-  const date=new Date(); date.setDate(date.getDate()-off);
-  const key=date.toDateString();
-
-  if(data.find(e=>e.key===key)){
-    alert("Already saved for this date"); return;
-  }
+  let day=dayType.value;
+  let off=+dateOffset.value;
+  let d=new Date(); d.setDate(d.getDate()-off);
+  let date=d.toISOString().slice(0,10);
+  if(data.find(e=>e.date===date)) return alert("Already saved");
 
   let worked="yes";
-  if(day!=="weekday") worked=document.getElementById("worked").value;
+  if(day!=="weekday") worked=worked.value;
 
   let hours=0;
   if(day==="weekday"){
-    const out=document.getElementById("outTime").value;
-    hours=Math.max(0,(toMin(out)-toMin("5:30"))/60);
-  }else{
-    if(worked==="yes"){
-      const out=document.getElementById("outTime").value;
-      hours=8+Math.max(0,(toMin(out)-toMin("5:30"))/60);
-    }
+    hours=Math.max(0,(toMin(outTime.value)-toMin("5:30"))/60);
+  }else if(worked==="yes"){
+    hours=8+Math.max(0,(toMin(outTime.value)-toMin("5:30"))/60);
   }
 
-  data.push({key,day,worked,hours});
-  localStorage.setItem("otData",JSON.stringify(data));
+  data.push({date,day,worked,out:outTime.value||"-",hours});
+  localStorage.setItem("otEntries",JSON.stringify(data));
   render();
 }
 
-/* ===== RENDER ===== */
 function render(){
-  const h=document.getElementById("history");
-  h.innerHTML="";
+  history.innerHTML="";
   data.forEach((e,i)=>{
-    const tr=document.createElement("tr");
+    let tr=document.createElement("tr");
     if(e.day!=="weekday") tr.classList.add("red");
-    tr.innerHTML=`
-      <td>${e.key}</td>
-      <td>${e.day}</td>
-      <td>${e.hours}</td>
-      <td><button onclick="del(${i})">X</button></td>`;
-    h.appendChild(tr);
+    tr.innerHTML=`<td>${e.date}</td><td>${e.day}</td><td>${e.hours}</td>
+    <td><button onclick="del(${i})">X</button></td>`;
+    history.appendChild(tr);
   });
 }
 function del(i){
   data.splice(i,1);
-  localStorage.setItem("otData",JSON.stringify(data));
+  localStorage.setItem("otEntries",JSON.stringify(data));
   render();
 }
 
-/* ===== REPORT ===== */
-function showReport(){
-  let wd=0,sa=0,su=0,ho=0;
+function copyData(){
+  let t="Date,Day,Worked,OutTime,Hours\n";
   data.forEach(e=>{
-    if(e.day==="weekday") wd+=e.hours;
-    if(e.day==="saturday"&&e.worked==="yes") sa++;
-    if(e.day==="sunday"&&e.worked==="yes") su++;
-    if(e.day==="holiday"&&e.worked==="yes") ho++;
+    t+=`${e.date},${e.day},${e.worked},${e.out},${e.hours}\n`;
   });
-  document.getElementById("report").innerHTML=
-    `Weekday OT hours: ${wd}<br>
-     Saturday worked days: ${sa}<br>
-     Sunday worked days: ${su}<br>
-     Public holiday worked days: ${ho}`;
+  exportBox.value=t;
+  exportBox.classList.remove("hide");
+  exportBox.select();
+  document.execCommand("copy");
+  alert("Data copied!");
 }
 
-/* ===== INIT ===== */
-applySalaryUI();
-updateUI();
-render();
+updateUI(); render();
 </script>
 </body>
 </html>
