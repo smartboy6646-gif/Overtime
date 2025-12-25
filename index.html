@@ -4,75 +4,25 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>OT Entry – Ronnie Ruchal</title>
-
 <style>
-body{
-  margin:0;
-  font-family:-apple-system,BlinkMacSystemFont,sans-serif;
-  background:#eef4fb;
-}
-.container{
-  max-width:420px;
-  margin:auto;
-  padding:14px;
-}
-h2{text-align:center;color:#1e88e5; margin-bottom: 10px;}
-.card{
-  background:#fff;
-  padding:14px;
-  border-radius:12px;
-  margin-bottom:12px;
-  box-shadow:0 4px 12px rgba(0,0,0,.08);
-}
-label{font-size:13px;color:#444; font-weight: bold;}
-select,button{
-  width:100%;
-  padding:11px;
-  font-size:16px;
-  border-radius:8px;
-  border:1px solid #cfd8dc;
-  margin-top:6px;
-  margin-bottom: 10px;
-}
-button{
-  background:#1e88e5;
-  color:#fff;
-  border:none;
-  cursor: pointer;
-  font-weight: bold;
-}
-button:active{background: #1565c0;}
-table{
-  width:100%;
-  border-collapse:collapse;
-  font-size:14px;
-}
-th,td{
-  padding:8px;
-  border-bottom:1px solid #eee;
-  text-align:center;
-}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#eef4fb;}
+.container{max-width:420px;margin:auto;padding:14px;}
+h2{text-align:center;color:#1e88e5;margin-bottom:10px;}
+.card{background:#fff;padding:14px;border-radius:12px;margin-bottom:12px;box-shadow:0 4px 12px rgba(0,0,0,.08);}
+label{font-size:13px;color:#444;font-weight:bold;}
+select,button{width:100%;padding:11px;font-size:16px;border-radius:8px;border:1px solid #cfd8dc;margin-top:6px;margin-bottom:10px;}
+button{background:#1e88e5;color:#fff;border:none;cursor:pointer;font-weight:bold;}
+button:active{background:#1565c0;}
+table{width:100%;border-collapse:collapse;font-size:14px;}
+th,td{padding:8px;border-bottom:1px solid #eee;text-align:center;}
 .red{color:#d32f2f;font-weight:600}
-.total-box{
-  text-align: right;
-  font-size: 18px;
-  font-weight: bold;
-  color: #1e88e5;
-  padding-top: 10px;
-  border-top: 2px solid #eef4fb;
-}
+.total-box{text-align:right;font-size:18px;font-weight:bold;color:#1e88e5;padding-top:10px;border-top:2px solid #eef4fb;margin-top:10px;}
 .hide{display:none}
-.del-btn{
-  background:#ff5252;
-  padding:5px 10px;
-  font-size:12px;
-  width: auto;
-  margin: 0;
-}
+.del-btn{background:#ff5252;padding:5px 10px;font-size:12px;width:auto;margin:0;}
 </style>
 </head>
-
 <body>
+
 <div class="container">
 <h2>OT Entry App</h2>
 
@@ -85,7 +35,7 @@ th,td{
     <option value="holiday">Public Holiday</option>
   </select>
 
-  <label>Date (मिति छान्नुहोस्)</label>
+  <label>Date (मिति)</label>
   <select id="dateOffset">
     <option value="0">Today</option>
     <option value="1">1 day ago</option>
@@ -102,7 +52,7 @@ th,td{
   </div>
 
   <div id="outBox">
-    <label>Out Time (काम सकिएको समय)</label>
+    <label>Out Time (बेलुकाको समय)</label>
     <select id="outTime"></select>
   </div>
 
@@ -112,19 +62,11 @@ th,td{
 <div class="card">
   <table>
     <thead>
-      <tr>
-        <th>Date</th>
-        <th>Day</th>
-        <th>Hours</th>
-        <th>Action</th>
-      </tr>
+      <tr><th>Date</th><th>Day</th><th>Hours</th><th>Action</th></tr>
     </thead>
     <tbody id="historyBody"></tbody>
   </table>
-  
-  <div class="total-box">
-    Total OT Hours: <span id="totalHoursDisplay">0.00</span>
-  </div>
+  <div class="total-box">Total OT Hours: <span id="totalHoursDisplay">0.00</span></div>
 </div>
 </div>
 
@@ -132,10 +74,27 @@ th,td{
 const STORE_KEY="ot_entry_data_v1";
 let entries=JSON.parse(localStorage.getItem(STORE_KEY)||"[]");
 
-const weekdayTimes=["5:30","6:00","6:30","7:00","7:30","8:00","8:30","9:00","9:30","10:00","10:30","11:00","11:30","12:00"];
-const holidayTimes=["5:30","6:00","6:30","7:00","7:30","8:00","8:30","9:00"];
+// 12-hour format options for selection
+const weekdayTimes=["5:30 PM","6:00 PM","6:30 PM","7:00 PM","7:30 PM","8:00 PM","8:30 PM","9:00 PM","9:30 PM","10:00 PM","10:30 PM","11:00 PM","11:30 PM","12:00 AM"];
+const holidayTimes=["5:30 PM","6:00 PM","6:30 PM","7:00 PM","7:30 PM","8:00 PM","8:30 PM","9:00 PM"];
 
-const toMin=t=>{let p=t.split(":");return(+p[0])*60+(+p[1]);};
+// Convert "H:MM AM/PM" to absolute minutes of the day
+function timeToMins(timeStr) {
+    let [time, modifier] = timeStr.split(' ');
+    let [hours, minutes] = time.split(':');
+    hours = parseInt(hours);
+    minutes = parseInt(minutes);
+
+    if (hours === 12) {
+        hours = (modifier === 'AM') ? 0 : 12;
+    } else if (modifier === 'PM') {
+        hours = hours + 12;
+    }
+    
+    // If 12:00 AM, it's actually the end of the day for calculation (24:00)
+    let total = (hours * 60) + minutes;
+    return (total === 0) ? 1440 : total;
+}
 
 function updateUI(){
   let day=document.getElementById("dayType").value;
@@ -148,7 +107,7 @@ function updateUI(){
   let times=(day==="weekday")?weekdayTimes:holidayTimes;
   times.forEach(t=>{
     let o=document.createElement("option");
-    o.value=t;o.text=t;
+    o.value=t; o.text=t;
     out.appendChild(o);
   });
 
@@ -170,32 +129,31 @@ function saveEntry(){
   let date=d.toISOString().slice(0,10);
 
   if(entries.find(e=>e.date===date)){
-    alert("यो मितिको डाटा पहिले नै सेभ भइसकेको छ!");
+    alert("यो मितिको डाटा पहिले नै सेभ छ!");
     return;
   }
 
-  let workedVal="yes";
-  if(day!=="weekday") workedVal=document.getElementById("worked").value;
+  let outVal = document.getElementById("outTime").value;
+  let workedVal = (day!=="weekday") ? document.getElementById("worked").value : "yes";
+  let hours = 0;
 
-  let hours=0;
-  if(day==="weekday"){
-    hours=Math.max(0,(toMin(document.getElementById("outTime").value)-toMin("17:30"))/60); 
-    // Note: If input 5:30 means 17:30 in 24hr for calculation
-  }else if(workedVal==="yes"){
-    // 8 base hours + overtime after 5:30
-    hours=8 + Math.max(0,(toMin(document.getElementById("outTime").value)-toMin("5:30"))/60);
+  // Calculation Logic
+  let currentOutMins = timeToMins(outVal);
+  let baselineMins = timeToMins("5:30 PM"); // 1050 mins
+
+  if (day === "weekday") {
+    hours = Math.max(0, (currentOutMins - baselineMins) / 60);
+  } else if (workedVal === "yes") {
+    let extra = Math.max(0, (currentOutMins - baselineMins) / 60);
+    hours = 8 + extra;
   }
 
   entries.push({
-    date,
-    day,
-    worked:workedVal,
-    hours:parseFloat(hours.toFixed(2))
+    date, day, worked:workedVal, 
+    hours: parseFloat(hours.toFixed(2))
   });
 
-  // Date wise sort garne (naya date mathi aauna sakcha)
   entries.sort((a,b)=>new Date(b.date)-new Date(a.date));
-
   localStorage.setItem(STORE_KEY,JSON.stringify(entries));
   renderHistory();
 }
@@ -218,18 +176,16 @@ function renderHistory(){
     `;
     body.appendChild(tr);
   });
-
   totalDisplay.innerText = total.toFixed(2);
 }
 
 function delEntry(i){
-  if(!confirm("के तपाईँ यो रेकर्ड हटाउन चाहनुहुन्छ?")) return;
+  if(!confirm("के तपाईँ यो हटाउन चाहनुहुन्छ?")) return;
   entries.splice(i,1);
   localStorage.setItem(STORE_KEY,JSON.stringify(entries));
   renderHistory();
 }
 
-// Initial call
 updateUI();
 renderHistory();
 </script>
