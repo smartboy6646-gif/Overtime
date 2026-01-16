@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>Ronnie Payroll Pro v4.4</title>
+<title>Ronnie Payroll Pro v4.8</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
 :root { --primary: #2962ff; --bg: #f0f4f8; --card-bg: #ffffff; --text: #333; --red-highlight: #d32f2f; --green: #4caf50; }
@@ -37,12 +37,23 @@ td{padding:10px 2px; border-bottom:1px solid #f9f9f9; text-align:center;}
 .show-more-btn { background: #eceff1; color: #546e7a; border: none; width: 100%; padding: 10px; font-weight: bold; border-radius: 8px; margin-top: 10px; cursor: pointer; }
 .hide{display:none;}
 .exporting .del-col, .exporting .show-more-btn, .exporting .back-btn { display: none !important; }
+
+#toast {
+    visibility: hidden; min-width: 200px; background-color: #333; color: #fff;
+    text-align: center; border-radius: 12px; padding: 16px; position: fixed;
+    z-index: 1000; left: 50%; bottom: 30px; transform: translateX(-50%);
+    font-size: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+}
+#toast.show { visibility: visible; animation: fadein 0.5s, fadeout 0.5s 2.5s; }
+@keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 30px; opacity: 1;} }
+@keyframes fadeout { from {bottom: 30px; opacity: 1;} to {bottom: 0; opacity: 0;} }
 </style>
 </head>
 <body>
 <div class="container">
     <h2>Ronnie Ruchal</h2>
-    
+    <div id="toast">डाटा सेभ भयो! ✅</div>
+
     <div class="card">
         <label>Select Date</label>
         <input type="date" id="inputDate" onchange="autoDetectDay()">
@@ -77,25 +88,29 @@ td{padding:10px 2px; border-bottom:1px solid #f9f9f9; text-align:center;}
         <div id="hourView" class="report-card" style="margin-top:0; border-radius: 0 0 16px 16px;">
             <div class="report-title">Monthly Summary</div>
             <div class="report-line"><span>📅 Weekday Basic:</span><span class="report-val" id="hWBasic">0 hrs</span></div>
-            <div class="report-line"><span>🗓️ Sat (Worked):</span><span class="report-val" id="hSat">0 d</span></div>
-            <div class="report-line"><span>☀️ Sun/Hol (Worked):</span><span class="report-val" id="hSun">0 d</span></div>
-            <div class="report-line"><span>⚙️ Weekday OT:</span><span class="report-val" id="hNormalOT">0.0</span></div>
-            <div class="report-line"><span>🌙 Night OT:</span><span class="report-val" id="hNightOT">0.0</span></div>
+            <div class="report-line"><span>🗓️ Saturday Days:</span><span class="report-val" id="hSat">0 d</span></div>
+            <div class="report-line"><span>☀️ Sunday Days:</span><span class="report-val" id="hSun">0 d</span></div>
+            <div class="report-line"><span>🎈 Holiday Days:</span><span class="report-val" id="hHol">0 d</span></div>
+            <div class="report-line"><span>⚙️ Normal OT (Hrs):</span><span class="report-val" id="hNormalOT">0.0</span></div>
+            <div class="report-line"><span>🌙 Night OT (Hrs):</span><span class="report-val" id="hNightOT">0.0</span></div>
             <div class="salary-box"><div class="total-amt">₩ 0</div></div>
         </div>
 
         <div id="moneyView" class="report-card hide" style="margin-top:0; border-radius: 0 0 16px 16px;">
             <div class="report-title">Salary Breakdown</div>
-            <div class="report-line"><span>📅 Basic (Inc. Sun/Hol):</span><span class="report-val" id="mWBasic">₩ 0</span></div>
+            <div class="report-line"><span>📅 Basic (Mon-Fri):</span><span class="report-val" id="mWBasic">₩ 0</span></div>
+            <div class="report-line"><span>☀️ Sunday Basic:</span><span class="report-val" id="mSunBasic">₩ 0</span></div>
+            <div class="report-line"><span>🎈 Holiday Basic:</span><span class="report-val" id="mHolBasic">₩ 0</span></div>
             <div class="report-line"><span>⚙️ Weekday OT (1.5x):</span><span class="report-val" id="mWOT">₩ 0</span></div>
-            <div class="report-line"><span>🗓️ Saturday Pay (1.5x):</span><span class="report-val" id="mSat">₩ 0</span></div>
-            <div class="report-line"><span>☀️ Sun/Hol OT (1.5x):</span><span class="report-val" id="mSun">₩ 0</span></div>
-            <div class="report-line"><span>🌙 Night Bonus (3.0x):</span><span class="report-val" id="mNight">₩ 0</span></div>
+            <div class="report-line"><span>🗓️ Saturday OT (1.5x):</span><span class="report-val" id="mSatOT">₩ 0</span></div>
+            <div class="report-line"><span>☀️ Sunday OT (1.5x):</span><span class="report-val" id="mSunOT">₩ 0</span></div>
+            <div class="report-line"><span>🎈 Holiday OT (1.5x):</span><span class="report-val" id="mHolOT">₩ 0</span></div>
+            <div class="report-line"><span>🌙 Night Pay (3.0x):</span><span class="report-val" id="mNight">₩ 0</span></div>
             <div class="salary-box">
                 <div style="color:#aaa; font-size:12px;">Total Salary Estimate</div>
                 <div class="total-amt">₩ <span id="finalSalary">0</span></div>
             </div>
-            <button class="back-btn" onclick="switchToHours()">🔙 Back to Summary</button>
+            <button class="back-btn" onclick="switchToHours()">🔙 Back</button>
         </div>
     </div>
 
@@ -109,16 +124,17 @@ td{padding:10px 2px; border-bottom:1px solid #f9f9f9; text-align:center;}
 </div>
 
 <script>
-const STORE_KEY="ronnie_pro_v4.4";
+const STORE_KEY="ronnie_pro_v4.8";
 let entries=JSON.parse(localStorage.getItem(STORE_KEY)||"[]");
 let showFullHistory = false;
 const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const daysArr = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
 const times=["5:30 PM","6:00 PM","6:30 PM","7:00 PM","7:30 PM","8:00 PM","8:30 PM","9:00 PM","9:30 PM","10:00 PM","10:30 PM","11:00 PM","11:30 PM","12:00 AM"];
 
-function checkTodayEntry() {
-    let today = new Date().toISOString().split('T')[0];
-    if(!entries.find(e => e.date === today)) alert("आजको डेटा इन्ट्री गर्न बाँकी छ!");
+function showToast() {
+    let x = document.getElementById("toast");
+    x.className = "show";
+    setTimeout(function(){ x.className = x.className.replace("show", ""); }, 3000);
 }
 
 function autoDetectDay() {
@@ -142,8 +158,8 @@ function updateUI(){
 
 function saveEntry(){
     let date = document.getElementById("inputDate").value;
-    if(!date) return alert("मिति छान्नुहोस्!");
-    if(entries.find(e => e.date === date)) return alert("यो मितिको इन्ट्री छ!");
+    if(!date) return alert("मिति रोज्नुहोस्!");
+    if(entries.find(e => e.date === date)) return alert("डेटा पहिल्यै छ!");
 
     let type = document.getElementById("dayType").value;
     let outVal = document.getElementById("outTime").value;
@@ -156,7 +172,7 @@ function saveEntry(){
     let totalMins = (h*60)+min;
 
     if (type === "sunday" || type === "holiday") {
-        basicHrs = 8; // Sunday/Holiday gets 8 basic even if not worked
+        basicHrs = 8;
         if (workedVal === "yes") {
             normalOt = 8;
             nightOt = Math.max(0, (totalMins - 1320) / 60);
@@ -177,20 +193,21 @@ function saveEntry(){
     entries.sort((a,b)=>new Date(a.date)-new Date(b.date));
     localStorage.setItem(STORE_KEY, JSON.stringify(entries));
     renderHistory();
-    alert("डाटा सेभ भयो!");
+    showToast();
 }
 
 function renderHistory(){
     let body=document.getElementById("historyBody");
     body.innerHTML="";
     let displayEntries = showFullHistory ? entries : entries.slice(-5);
-    let wB=0, nOT_sum=0, niOT_sum=0, sD=0, suH_D=0;
+    let wB=0, nOT=0, niOT=0, sD=0, suD=0, hD=0;
     
     entries.forEach(e => {
-        if(e.type==="weekday") { wB += e.basicHrs; nOT_sum += e.normalOt; }
+        if(e.type==="weekday") { wB += e.basicHrs; nOT += e.normalOt; }
         else if(e.type==="saturday" && e.worked==="yes") sD++;
-        else if((e.type==="sunday" || e.type==="holiday") && e.worked==="yes") suH_D++;
-        niOT_sum += e.nightOt;
+        else if(e.type==="sunday" && e.worked==="yes") suD++;
+        else if(e.type==="holiday" && e.worked==="yes") hD++;
+        niOT += e.nightOt;
     });
 
     displayEntries.forEach((e)=>{
@@ -207,35 +224,42 @@ function renderHistory(){
 
     document.getElementById("hWBasic").innerText = wB + " hrs";
     document.getElementById("hSat").innerText = sD + " d";
-    document.getElementById("hSun").innerText = suH_D + " d";
-    document.getElementById("hNormalOT").innerText = nOT_sum.toFixed(1);
-    document.getElementById("hNightOT").innerText = niOT_sum.toFixed(1);
+    document.getElementById("hSun").innerText = suD + " d";
+    document.getElementById("hHol").innerText = hD + " d";
+    document.getElementById("hNormalOT").innerText = nOT.toFixed(1);
+    document.getElementById("hNightOT").innerText = niOT.toFixed(1);
 }
 
 function calculateSalary() {
     let rate = parseFloat(document.getElementById("hourlyRate").value) || 0;
-    let bP=0, otP=0, satP=0, sunH_otP=0, nP=0;
+    let bP=0, suBP=0, hoBP=0, wOT=0, saOT=0, suOT=0, hoOT=0, nP=0;
 
     entries.forEach(e => {
         if(e.type==="weekday") {
             bP += e.basicHrs * rate;
-            otP += e.normalOt * rate * 1.5;
-        } else if(e.type === "sunday" || e.type === "holiday") {
-            bP += e.basicHrs * rate; // Sunday/Holiday Basic 8
-            if(e.worked === "yes") sunH_otP += e.normalOt * rate * 1.5; // Additional 8 OT
+            wOT += e.normalOt * rate * 1.5;
+        } else if(e.type === "sunday") {
+            suBP += e.basicHrs * rate;
+            if(e.worked === "yes") suOT += e.normalOt * rate * 1.5;
+        } else if(e.type === "holiday") {
+            hoBP += e.basicHrs * rate;
+            if(e.worked === "yes") hoOT += e.normalOt * rate * 1.5;
         } else if(e.type === "saturday" && e.worked === "yes") {
-            satP += e.normalOt * rate * 1.5;
+            saOT += e.normalOt * rate * 1.5;
         }
         nP += (e.nightOt * rate * 3.0); 
     });
 
     document.getElementById("mWBasic").innerText = "₩ " + bP.toLocaleString();
-    document.getElementById("mWOT").innerText = "₩ " + otP.toLocaleString();
-    document.getElementById("mSat").innerText = "₩ " + satP.toLocaleString();
-    document.getElementById("mSun").innerText = "₩ " + sunH_otP.toLocaleString();
+    document.getElementById("mSunBasic").innerText = "₩ " + suBP.toLocaleString();
+    document.getElementById("mHolBasic").innerText = "₩ " + hoBP.toLocaleString();
+    document.getElementById("mWOT").innerText = "₩ " + wOT.toLocaleString();
+    document.getElementById("mSatOT").innerText = "₩ " + saOT.toLocaleString();
+    document.getElementById("mSunOT").innerText = "₩ " + suOT.toLocaleString();
+    document.getElementById("mHolOT").innerText = "₩ " + hoOT.toLocaleString();
     document.getElementById("mNight").innerText = "₩ " + nP.toLocaleString();
     
-    let total = bP + otP + satP + sunH_otP + nP;
+    let total = bP + suBP + hoBP + wOT + saOT + suOT + hoOT + nP;
     document.getElementById("finalSalary").innerText = Math.round(total).toLocaleString();
     document.getElementById("hourView").classList.add("hide");
     document.getElementById("moneyView").classList.remove("hide");
@@ -245,10 +269,9 @@ function switchToHours() {
     document.getElementById("moneyView").classList.add("hide");
     document.getElementById("hourView").classList.remove("hide");
 }
-
 function toggleHistory() { showFullHistory = !showFullHistory; renderHistory(); }
-function delEntry(i){ if(confirm("डिलिट?")){ entries.splice(i,1); localStorage.setItem(STORE_KEY, JSON.stringify(entries)); renderHistory(); } }
-function resetAll(){ if(confirm("सबै रिसेट?")){ entries=[]; localStorage.setItem(STORE_KEY,"[]"); renderHistory(); switchToHours(); } }
+function delEntry(i){ if(confirm("डिलिट गर्ने?")){ entries.splice(i,1); localStorage.setItem(STORE_KEY, JSON.stringify(entries)); renderHistory(); } }
+function resetAll(){ if(confirm("सबै सफा गर्ने?")){ entries=[]; localStorage.setItem(STORE_KEY,"[]"); renderHistory(); switchToHours(); } }
 
 function downloadAsPhoto() {
     const area = document.getElementById('exportArea');
@@ -261,9 +284,8 @@ function downloadAsPhoto() {
         area.classList.remove('exporting');
     });
 }
-
 document.getElementById('inputDate').value = new Date().toISOString().split('T')[0];
-autoDetectDay(); renderHistory(); checkTodayEntry();
+autoDetectDay(); renderHistory();
 </script>
 </body>
 </html>
