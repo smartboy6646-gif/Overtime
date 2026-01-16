@@ -3,57 +3,40 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>Ronnie Payroll Pro v3.6</title>
+<title>Ronnie Payroll Pro v4.3</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
 :root { --primary: #2962ff; --bg: #f0f4f8; --card-bg: #ffffff; --text: #333; --red-highlight: #d32f2f; --green: #4caf50; }
 body{margin:0;font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg);color:var(--text);}
 .container{max-width:420px;margin:auto;padding:12px;}
 h2{text-align:center;color:var(--primary);margin-bottom:15px;}
-
 .card{background:var(--card-bg);padding:16px;border-radius:16px;margin-bottom:12px;box-shadow:0 8px 20px rgba(0,0,0,.05); position: relative;}
 label{font-size:11px;color:var(--primary);font-weight:bold;display:block;margin-bottom:4px;text-transform:uppercase;}
-
-/* Date Picker and Inputs UI Match */
 select, input[type="date"], input[type="number"] {
     width: 100%; height: 48px; padding: 0 12px; font-size: 16px; border-radius: 12px; 
     border: 1.5px solid #d1d9e6; margin-bottom: 12px; box-sizing: border-box; 
     background-color: #fcfcfc; outline: none; color: #333; display: block; -webkit-appearance: none;
 }
-
-/* Date Picker Icon */
-input[type="date"] {
-    background: #fcfcfc url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="%232962ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>') no-repeat 95% center;
-    background-size: 18px;
-}
-
 .btn-save {width: 100%; height: 50px; background: var(--primary); color: #fff; border: none; border-radius: 12px; font-size: 18px; font-weight: bold; cursor: pointer;}
-
 table{width:100%;border-collapse:collapse;font-size:13px;}
 th{color:#90a4ae; padding-bottom:8px; text-align: center;}
 td{padding:10px 2px; border-bottom:1px solid #f9f9f9; text-align:center;}
-
 .date-big { font-size: 18px; font-weight: 900; color: #000; display: block; }
 .month-small { font-size: 10px; color: #666; font-weight: normal; text-transform: uppercase; }
-
 .holiday-row { background-color: var(--red-highlight) !important; color: white !important; }
-.holiday-row .month-small, .holiday-row .date-big { color: #fff; }
-
 .report-card { background: #0a192f; color: #fff; padding: 20px; border-radius: 16px; margin-top: 10px; }
 .report-title{font-size:18px;font-weight:bold;margin-bottom:12px;color: var(--green); border-bottom: 1px solid #1e2d4d; padding-bottom: 8px;}
 .report-line{display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px;}
 .report-val{font-weight:bold; color: #fff;}
-
 .salary-box{background:#112240;padding:15px;border-radius:12px;margin-top:10px;text-align:center;}
 .total-amt{font-size:28px;color:var(--green);font-weight:bold;margin:5px 0;}
-
 .calc-btn {width: 100%; height: 48px; background: var(--primary); color: #fff; border: none; border-radius: 8px; font-weight: bold; margin: 10px 0; cursor: pointer;}
+.back-btn {width: 100%; height: 48px; background: #546e7a; color: #fff; border: none; border-radius: 8px; font-weight: bold; margin-bottom: 10px; cursor: pointer;}
 .photo-btn {width: 100%; height: 48px; background: var(--green); color: #fff; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;}
 .red-btn{background:#d32f2f; width: 100%; height: 35px; color: #fff; border: none; border-radius: 8px; margin-top: 10px; cursor: pointer;}
 .show-more-btn { background: #eceff1; color: #546e7a; border: none; width: 100%; padding: 10px; font-weight: bold; border-radius: 8px; margin-top: 10px; cursor: pointer; }
-
 .hide{display:none;}
-.exporting .del-col, .exporting .show-more-btn { display: none !important; }
+.exporting .del-col, .exporting .show-more-btn, .exporting .back-btn { display: none !important; }
 </style>
 </head>
 <body>
@@ -63,7 +46,6 @@ td{padding:10px 2px; border-bottom:1px solid #f9f9f9; text-align:center;}
     <div class="card">
         <label>Select Date</label>
         <input type="date" id="inputDate" onchange="autoDetectDay()">
-        
         <label>Day Type</label>
         <select id="dayType" onchange="updateUI()">
             <option value="weekday">Weekday (Mon-Fri)</option>
@@ -71,7 +53,6 @@ td{padding:10px 2px; border-bottom:1px solid #f9f9f9; text-align:center;}
             <option value="sunday">Sunday</option>
             <option value="holiday">Public Holiday</option>
         </select>
-        
         <div id="workedBox" class="hide">
             <label>Worked Today?</label>
             <select id="worked" onchange="updateUI()">
@@ -79,7 +60,6 @@ td{padding:10px 2px; border-bottom:1px solid #f9f9f9; text-align:center;}
                 <option value="no">No</option>
             </select>
         </div>
-        
         <div id="outBox"><label>Out Time</label><select id="outTime"></select></div>
         <button class="btn-save" onclick="saveEntry()">Save Entry 💾</button>
     </div>
@@ -97,26 +77,25 @@ td{padding:10px 2px; border-bottom:1px solid #f9f9f9; text-align:center;}
         <div id="hourView" class="report-card" style="margin-top:0; border-radius: 0 0 16px 16px;">
             <div class="report-title">Monthly Summary</div>
             <div class="report-line"><span>📅 Weekday Basic:</span><span class="report-val" id="hWBasic">0 hrs</span></div>
-            <div class="report-line"><span>🗓️ Saturday:</span><span class="report-val" id="hSat">0 d</span></div>
-            <div class="report-line"><span>☀️ Sunday:</span><span class="report-val" id="hSun">0 d</span></div>
-            <div class="report-line"><span>🎈 Holiday:</span><span class="report-val" id="hHol">0 d</span></div>
-            <div class="report-line"><span>⚙️ Normal OT:</span><span class="report-val" id="hNormalOT">0.0</span></div>
-            <div class="report-line"><span>🌙 Night OT:</span><span class="report-val" id="hNightOT">0.0</span></div>
+            <div class="report-line"><span>🗓️ Saturday (Worked):</span><span class="report-val" id="hSat">0 d</span></div>
+            <div class="report-line"><span>☀️ Sunday (Worked):</span><span class="report-val" id="hSun">0 d</span></div>
+            <div class="report-line"><span>🎈 Holiday (Worked):</span><span class="report-val" id="hHol">0 d</span></div>
+            <div class="report-line"><span>⚙️ Weekday OT:</span><span class="report-val" id="hNormalOT">0.0</span></div>
+            <div class="report-line"><span>🌙 Night OT (Total):</span><span class="report-val" id="hNightOT">0.0</span></div>
             <div class="salary-box"><div class="total-amt">₩ 0</div></div>
         </div>
 
         <div id="moneyView" class="report-card hide" style="margin-top:0; border-radius: 0 0 16px 16px;">
             <div class="report-title">Salary Breakdown</div>
             <div class="report-line"><span>📅 Basic Pay:</span><span class="report-val" id="mWBasic">₩ 0</span></div>
-            <div class="report-line"><span>⚙️ Normal OT (1.5x):</span><span class="report-val" id="mWOT">₩ 0</span></div>
-            <div class="report-line"><span>🗓️ Saturday (1.5x):</span><span class="report-val" id="mSat">₩ 0</span></div>
-            <div class="report-line"><span>☀️ Sunday (1.5x):</span><span class="report-val" id="mSun">₩ 0</span></div>
-            <div class="report-line"><span>🎈 Holiday (1.5x):</span><span class="report-val" id="mHol">₩ 0</span></div>
-            <div class="report-line"><span>🌙 Night Bonus (3.0x):</span><span class="report-val" id="mNight">₩ 0</span></div>
+            <div class="report-line"><span>⚙️ Weekday OT:</span><span class="report-val" id="mWOT">₩ 0</span></div>
+            <div class="report-line"><span>🗓️ Sat/Sun/Hol OT:</span><span class="report-val" id="mSpecial">₩ 0</span></div>
+            <div class="report-line"><span>🌙 Night Bonus (3x):</span><span class="report-val" id="mNight">₩ 0</span></div>
             <div class="salary-box">
                 <div style="color:#aaa; font-size:12px;">Total Salary Estimate</div>
                 <div class="total-amt">₩ <span id="finalSalary">0</span></div>
             </div>
+            <button class="back-btn" onclick="switchToHours()">🔙 Back to Summary</button>
         </div>
     </div>
 
@@ -130,12 +109,19 @@ td{padding:10px 2px; border-bottom:1px solid #f9f9f9; text-align:center;}
 </div>
 
 <script>
-const STORE_KEY="ronnie_pro_v3.6";
+const STORE_KEY="ronnie_pro_v4.3";
 let entries=JSON.parse(localStorage.getItem(STORE_KEY)||"[]");
 let showFullHistory = false;
 const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const daysArr = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
 const times=["5:30 PM","6:00 PM","6:30 PM","7:00 PM","7:30 PM","8:00 PM","8:30 PM","9:00 PM","9:30 PM","10:00 PM","10:30 PM","11:00 PM","11:30 PM","12:00 AM"];
+
+function checkTodayEntry() {
+    let today = new Date().toISOString().split('T')[0];
+    if(!entries.find(e => e.date === today)) {
+        alert("⚠️ आजको डेटा इन्ट्री गर्न बाँकी छ!");
+    }
+}
 
 function autoDetectDay() {
     let d = new Date(document.getElementById("inputDate").value);
@@ -158,30 +144,36 @@ function updateUI(){
 
 function saveEntry(){
     let date = document.getElementById("inputDate").value;
-    if(!date) return alert("Select date!");
+    if(!date) return alert("कृपया मिति छान्नुहोस्!");
+    if(entries.find(e => e.date === date)) return alert("यो मितिको इन्ट्री पहिल्यै छ!");
+
     let type = document.getElementById("dayType").value;
     let outVal = document.getElementById("outTime").value;
     let workedVal = (type==="weekday") ? "yes" : document.getElementById("worked").value;
     
     let normalOt = 0, nightOt = 0, basicHrs = 0;
 
-    // Logic Fix: Sunday Rule and others
+    // Time conversion
+    let [t, m] = outVal.split(' ');
+    let [h, min] = t.split(':').map(Number);
+    if(h===12) h=(m==='AM')?0:12; else if(m==='PM') h+=12;
+    let totalMins = (h*60)+min;
+
     if (type === "sunday") {
-        basicHrs = 8; // Sunday has 8 basic even if not worked
+        basicHrs = 8;
         if (workedVal === "yes") {
-            normalOt = 8; // Extra 8 OT if worked
-            let [t, m] = outVal.split(' ');
-            let [h, min] = t.split(':').map(Number);
-            if(h===12) h=(m==='AM')?0:12; else if(m==='PM') h+=12;
-            let totalMins = (h*60)+min;
+            normalOt = 8;
             nightOt = Math.max(0, (totalMins - 1320) / 60);
         }
-    } else if (workedVal === "yes") {
+    } else if (type === "saturday" || type === "holiday") {
+        if (workedVal === "yes") {
+            basicHrs = 0; // No basic on Sat/Hol, everything is OT
+            normalOt = 8 + Math.max(0, (Math.min(totalMins, 1320) - 1050) / 60); // 8 basic time + OT time
+            nightOt = Math.max(0, (totalMins - 1320) / 60);
+        }
+    } else {
+        // Weekday
         basicHrs = 8;
-        let [t, m] = outVal.split(' ');
-        let [h, min] = t.split(':').map(Number);
-        if(h===12) h=(m==='AM')?0:12; else if(m==='PM') h+=12;
-        let totalMins = (h*60)+min;
         normalOt = Math.max(0, (Math.min(totalMins, 1320) - 1050) / 60);
         nightOt = Math.max(0, (totalMins - 1320) / 60);
     }
@@ -190,6 +182,7 @@ function saveEntry(){
     entries.sort((a,b)=>new Date(a.date)-new Date(b.date));
     localStorage.setItem(STORE_KEY, JSON.stringify(entries));
     renderHistory();
+    alert("डाटा सेभ भयो!");
 }
 
 function renderHistory(){
@@ -198,15 +191,18 @@ function renderHistory(){
     let displayEntries = showFullHistory ? entries : entries.slice(-5);
     document.getElementById("showMoreBtn").style.display = entries.length > 5 ? "block" : "none";
 
-    let wB=0, nOT=0, niOT=0, sD=0, suD=0, hD=0;
+    let wB=0, nOT_sum=0, niOT_sum=0, sD=0, suD=0, hD=0;
+    
     entries.forEach(e => {
-        if(e.type==="weekday") { wB += e.basicHrs; nOT += e.normalOt; }
+        if(e.type==="weekday") { 
+            wB += e.basicHrs; 
+            nOT_sum += e.normalOt; 
+        }
         else if(e.type==="saturday" && e.worked==="yes") sD++;
-        else if(e.type==="sunday") suD++;
+        else if(e.type==="sunday" && e.worked==="yes") suD++;
         else if(e.type==="holiday" && e.worked==="yes") hD++;
         
-        if(e.type!=="weekday") nOT += e.normalOt;
-        niOT += e.nightOt;
+        niOT_sum += e.nightOt;
     });
 
     displayEntries.forEach((e)=>{
@@ -225,49 +221,53 @@ function renderHistory(){
     document.getElementById("hSat").innerText = sD + " d";
     document.getElementById("hSun").innerText = suD + " d";
     document.getElementById("hHol").innerText = hD + " d";
-    document.getElementById("hNormalOT").innerText = nOT.toFixed(1);
-    document.getElementById("hNightOT").innerText = niOT.toFixed(1);
+    document.getElementById("hNormalOT").innerText = nOT_sum.toFixed(1);
+    document.getElementById("hNightOT").innerText = niOT_sum.toFixed(1);
 }
 
 function calculateSalary() {
     let rate = parseFloat(document.getElementById("hourlyRate").value) || 0;
-    let wB_P=0, wOT_P=0, satP=0, sunP=0, holP=0, nightP=0;
+    let bP=0, otP=0, specP=0, nP=0;
 
     entries.forEach(e => {
         if(e.type==="weekday") {
-            wB_P += e.basicHrs * rate;
-            wOT_P += e.normalOt * rate * 1.5;
+            bP += e.basicHrs * rate;
+            otP += e.normalOt * rate * 1.5;
+        } else if(e.type === "sunday") {
+            bP += e.basicHrs * rate; // Sunday basic always
+            if(e.worked === "yes") specP += e.normalOt * rate * 1.5;
         } else {
-            let pay = (e.basicHrs + e.normalOt) * rate * 1.5;
-            if(e.type==="saturday" && e.worked==="yes") satP += pay;
-            else if(e.type==="sunday") sunP += pay;
-            else if(e.type==="holiday" && e.worked==="yes") holP += pay;
+            // Saturday/Holiday - No basic, only OT
+            if(e.worked === "yes") specP += e.normalOt * rate * 1.5;
         }
-        nightP += (e.nightOt * rate * 3.0); // Night OT 3x
+        nP += (e.nightOt * rate * 3.0); 
     });
 
-    document.getElementById("mWBasic").innerText = "₩ " + wB_P.toLocaleString();
-    document.getElementById("mWOT").innerText = "₩ " + wOT_P.toLocaleString();
-    document.getElementById("mSat").innerText = "₩ " + satP.toLocaleString();
-    document.getElementById("mSun").innerText = "₩ " + sunP.toLocaleString();
-    document.getElementById("mHol").innerText = "₩ " + holP.toLocaleString();
-    document.getElementById("mNight").innerText = "₩ " + nightP.toLocaleString();
-    document.getElementById("finalSalary").innerText = Math.round(wB_P+wOT_P+satP+sunP+holP+nightP).toLocaleString();
+    document.getElementById("mWBasic").innerText = "₩ " + bP.toLocaleString();
+    document.getElementById("mWOT").innerText = "₩ " + otP.toLocaleString();
+    document.getElementById("mSpecial").innerText = "₩ " + specP.toLocaleString();
+    document.getElementById("mNight").innerText = "₩ " + nP.toLocaleString();
+    document.getElementById("finalSalary").innerText = Math.round(bP+otP+specP+nP).toLocaleString();
 
     document.getElementById("hourView").classList.add("hide");
     document.getElementById("moneyView").classList.remove("hide");
 }
 
+function switchToHours() {
+    document.getElementById("moneyView").classList.add("hide");
+    document.getElementById("hourView").classList.remove("hide");
+}
+
 function toggleHistory() { showFullHistory = !showFullHistory; renderHistory(); }
-function delEntry(i){ if(confirm("Delete?")){ entries.splice(i,1); localStorage.setItem(STORE_KEY, JSON.stringify(entries)); renderHistory(); } }
-function resetAll(){ if(confirm("Reset month?")){ entries=[]; localStorage.setItem(STORE_KEY,"[]"); renderHistory(); } }
+function delEntry(i){ if(confirm("डिलिट गर्ने?")){ entries.splice(i,1); localStorage.setItem(STORE_KEY, JSON.stringify(entries)); renderHistory(); } }
+function resetAll(){ if(confirm("सबै रिसेट गर्ने?")){ entries=[]; localStorage.setItem(STORE_KEY,"[]"); renderHistory(); switchToHours(); } }
 
 function downloadAsPhoto() {
     const area = document.getElementById('exportArea');
     area.classList.add('exporting');
     html2canvas(area, { scale: 2 }).then(canvas => {
         let link = document.createElement('a');
-        link.download = `Payroll_${new Date().toISOString().split('T')[0]}.png`;
+        link.download = `Ronnie_Payroll.png`;
         link.href = canvas.toDataURL();
         link.click();
         area.classList.remove('exporting');
@@ -275,7 +275,7 @@ function downloadAsPhoto() {
 }
 
 document.getElementById('inputDate').value = new Date().toISOString().split('T')[0];
-autoDetectDay(); renderHistory();
+autoDetectDay(); renderHistory(); checkTodayEntry();
 </script>
 </body>
 </html>
