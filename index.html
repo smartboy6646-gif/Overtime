@@ -217,7 +217,8 @@ function renderHistory(){
         tr.innerHTML=`<td><span class="date-big">${e.date.split('-')[2]}</span><span class="month-small">${months[d.getMonth()]}</span></td>
                       <td style="font-weight:bold">${daysArr[d.getDay()]}</td>
                       <td>${e.basicHrs}</td>
-                      <td>${(e.normalOt+e.nightOt).toFixed(1)}</td>
+                      <td><b>${(e.normalOt+e.nightOt).toFixed(1)}</b></td>
+
                       <td class="del-col"><button onclick="delEntry(${entries.indexOf(e)})">🗑️</button></td>`;
         body.appendChild(tr);
     });
@@ -289,3 +290,4 @@ autoDetectDay(); renderHistory();
 </script>
 </body>
 </html>
+
