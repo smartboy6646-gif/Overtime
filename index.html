@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>Ronnie Payroll Pro v4.8</title>
+<title>Ronnie Payroll Pro v5.0 (Smart)</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
-:root { --primary: #2962ff; --bg: #f0f4f8; --card-bg: #ffffff; --text: #333; --red-highlight: #d32f2f; --green: #4caf50; }
+:root { --primary: #2962ff; --bg: #f0f4f8; --card-bg: #ffffff; --text: #333; --red-highlight: #d32f2f; --green: #4caf50; --missing: #ffeb3b; }
 body{margin:0;font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg);color:var(--text);}
 .container{max-width:420px;margin:auto;padding:12px;}
 h2{text-align:center;color:var(--primary);margin-bottom:15px;}
@@ -24,6 +24,11 @@ td{padding:10px 2px; border-bottom:1px solid #f9f9f9; text-align:center;}
 .date-big { font-size: 18px; font-weight: 900; color: #000; display: block; }
 .month-small { font-size: 10px; color: #666; font-weight: normal; text-transform: uppercase; }
 .holiday-row { background-color: var(--red-highlight) !important; color: white !important; }
+
+/* New Style for Missing Row */
+.missing-row { background-color: #fff3e0 !important; color: #e65100 !important; border-left: 4px solid #ff9800; }
+.missing-text { font-weight: bold; color: #d32f2f; font-size: 12px; }
+
 .report-card { background: #0a192f; color: #fff; padding: 20px; border-radius: 16px; margin-top: 10px; }
 .report-title{font-size:18px;font-weight:bold;margin-bottom:12px;color: var(--green); border-bottom: 1px solid #1e2d4d; padding-bottom: 8px;}
 .report-line{display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px;}
@@ -38,6 +43,23 @@ td{padding:10px 2px; border-bottom:1px solid #f9f9f9; text-align:center;}
 .hide{display:none;}
 .exporting .del-col, .exporting .show-more-btn, .exporting .back-btn { display: none !important; }
 
+/* Modal Popup Styles */
+.modal-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.6); z-index: 2000; display: flex;
+    justify-content: center; align-items: center; visibility: hidden; opacity: 0;
+    transition: opacity 0.3s;
+}
+.modal-overlay.active { visibility: visible; opacity: 1; }
+.modal-box {
+    background: #fff; padding: 25px; border-radius: 16px; width: 80%; max-width: 320px;
+    text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+}
+.modal-icon { font-size: 40px; margin-bottom: 10px; display: block; }
+.modal-title { font-size: 18px; font-weight: bold; margin-bottom: 8px; color: var(--primary); }
+.modal-desc { font-size: 14px; color: #666; margin-bottom: 20px; }
+.modal-btn { background: var(--primary); color: #fff; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; }
+
 #toast {
     visibility: hidden; min-width: 200px; background-color: #333; color: #fff;
     text-align: center; border-radius: 12px; padding: 16px; position: fixed;
@@ -50,6 +72,16 @@ td{padding:10px 2px; border-bottom:1px solid #f9f9f9; text-align:center;}
 </style>
 </head>
 <body>
+
+<div id="alertModal" class="modal-overlay">
+    <div class="modal-box">
+        <span class="modal-icon">⚠️</span>
+        <div class="modal-title">Attention Ronnie!</div>
+        <div class="modal-desc">आजको मिति (<span id="modalDate"></span>) को इन्ट्री भएको छैन। के आज काम गर्नुभयो?</div>
+        <button class="modal-btn" onclick="closeModal()">OK, I will fill now</button>
+    </div>
+</div>
+
 <div class="container">
     <h2>Ronnie Ruchal</h2>
     <div id="toast">डाटा सेभ भयो! ✅</div>
@@ -77,7 +109,7 @@ td{padding:10px 2px; border-bottom:1px solid #f9f9f9; text-align:center;}
 
     <div id="exportArea">
         <div class="card" style="margin-bottom:0; border-radius: 16px 16px 0 0;">
-            <label style="margin-bottom:10px;">History (OT Records)</label>
+            <label style="margin-bottom:10px;">History (With Missing Check)</label>
             <table>
                 <thead><tr><th>Date</th><th>Day</th><th>Basic</th><th>OT</th><th class="del-col">Del</th></tr></thead>
                 <tbody id="historyBody"></tbody>
@@ -196,12 +228,51 @@ function saveEntry(){
     showToast();
 }
 
+// *** NEW FUNCTION: Fill Gaps for Display ***
+function getDisplayList() {
+    if(entries.length < 2) return entries;
+    
+    let fullList = [];
+    for(let i=0; i<entries.length; i++) {
+        fullList.push(entries[i]);
+        
+        // Check gap between this and next
+        if(i < entries.length - 1) {
+            let currDate = new Date(entries[i].date);
+            let nextDate = new Date(entries[i+1].date);
+            
+            // Calculate difference in days
+            let timeDiff = nextDate - currDate;
+            let diffDays = Math.ceil(timeDiff / (1000 * 3600 * 24));
+            
+            // If gap is more than 1 day, insert missing records
+            if(diffDays > 1) {
+                for(let j=1; j<diffDays; j++) {
+                    let missingDate = new Date(currDate);
+                    missingDate.setDate(currDate.getDate() + j);
+                    fullList.push({
+                        date: missingDate.toISOString().split('T')[0],
+                        isMissing: true
+                    });
+                }
+            }
+        }
+    }
+    return fullList;
+}
+
 function renderHistory(){
     let body=document.getElementById("historyBody");
     body.innerHTML="";
-    let displayEntries = showFullHistory ? entries : entries.slice(-5);
+    
+    // Get list with gaps filled
+    let displayList = getDisplayList();
+    
+    let entriesToShow = showFullHistory ? displayList : displayList.slice(-5);
+    
     let wB=0, nOT=0, niOT=0, sD=0, suD=0, hD=0;
     
+    // Calculate totals only from REAL entries
     entries.forEach(e => {
         if(e.type==="weekday") { wB += e.basicHrs; nOT += e.normalOt; }
         else if(e.type==="saturday" && e.worked==="yes") sD++;
@@ -210,16 +281,28 @@ function renderHistory(){
         niOT += e.nightOt;
     });
 
-    displayEntries.forEach((e)=>{
+    entriesToShow.forEach((e)=>{
         let d = new Date(e.date);
         let tr=document.createElement("tr");
-        if(e.type !== "weekday") tr.className = "holiday-row";
-        tr.innerHTML=`<td><span class="date-big">${e.date.split('-')[2]}</span><span class="month-small">${months[d.getMonth()]}</span></td>
-                      <td style="font-weight:bold">${daysArr[d.getDay()]}</td>
-                      <td>${e.basicHrs}</td>
-                      <td><b>${(e.normalOt+e.nightOt).toFixed(1)}</b></td>
-
-                      <td class="del-col"><button onclick="delEntry(${entries.indexOf(e)})">🗑️</button></td>`;
+        
+        if (e.isMissing) {
+            // RENDER MISSING ROW
+            tr.className = "missing-row";
+            tr.innerHTML = `
+                <td><span class="date-big">${e.date.split('-')[2]}</span><span class="month-small">${months[d.getMonth()]}</span></td>
+                <td style="font-weight:bold">${daysArr[d.getDay()]}</td>
+                <td colspan="2" class="missing-text">MISSING ❌</td>
+                <td class="del-col">-</td>
+            `;
+        } else {
+            // RENDER NORMAL ROW
+            if(e.type !== "weekday") tr.className = "holiday-row";
+            tr.innerHTML=`<td><span class="date-big">${e.date.split('-')[2]}</span><span class="month-small">${months[d.getMonth()]}</span></td>
+                          <td style="font-weight:bold">${daysArr[d.getDay()]}</td>
+                          <td>${e.basicHrs}</td>
+                          <td><b>${(e.normalOt+e.nightOt).toFixed(1)}</b></td>
+                          <td class="del-col"><button onclick="delEntry('${e.date}')">🗑️</button></td>`;
+        }
         body.appendChild(tr);
     });
 
@@ -271,7 +354,18 @@ function switchToHours() {
     document.getElementById("hourView").classList.remove("hide");
 }
 function toggleHistory() { showFullHistory = !showFullHistory; renderHistory(); }
-function delEntry(i){ if(confirm("डिलिट गर्ने?")){ entries.splice(i,1); localStorage.setItem(STORE_KEY, JSON.stringify(entries)); renderHistory(); } }
+
+// Updated DelEntry to match Date instead of Index (safer for mixed lists)
+function delEntry(dateStr){ 
+    if(confirm("डिलिट गर्ने?")){ 
+        let idx = entries.findIndex(e => e.date === dateStr);
+        if(idx > -1) {
+            entries.splice(idx,1); 
+            localStorage.setItem(STORE_KEY, JSON.stringify(entries)); 
+            renderHistory(); 
+        }
+    } 
+}
 function resetAll(){ if(confirm("सबै सफा गर्ने?")){ entries=[]; localStorage.setItem(STORE_KEY,"[]"); renderHistory(); switchToHours(); } }
 
 function downloadAsPhoto() {
@@ -285,9 +379,26 @@ function downloadAsPhoto() {
         area.classList.remove('exporting');
     });
 }
+
+// *** AUTO POPUP LOGIC ***
+function checkToday() {
+    let today = new Date().toISOString().split('T')[0];
+    let exists = entries.find(e => e.date === today);
+    if(!exists) {
+        document.getElementById("modalDate").innerText = today;
+        document.getElementById("alertModal").classList.add("active");
+    }
+}
+function closeModal() {
+    document.getElementById("alertModal").classList.remove("active");
+}
+
 document.getElementById('inputDate').value = new Date().toISOString().split('T')[0];
 autoDetectDay(); renderHistory();
+
+// Run check after 1 second
+setTimeout(checkToday, 1000);
+
 </script>
 </body>
 </html>
-
