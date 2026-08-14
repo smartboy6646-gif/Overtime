@@ -758,12 +758,13 @@ function calcReportSalary() {
     let pubHolOtHrs = parseFloat(document.getElementById("r_pubHolOtHrs").innerText) || 0;
     let standardOtHrs = oHrs - pubHolOtHrs;
 
-    // Based strictly on Payslip math logic + 3x Public Hol OT Rate Customization
     let basePay = nHrs * rate;                      
-    let otPay = (standardOtHrs * rate * 1.5) + (pubHolOtHrs * rate * 3.0); // Applies 3x to Public Hol OT
+    let otPay = (standardOtHrs * rate * 1.5) + (pubHolOtHrs * rate * 3.0); 
     let holPay = hwHrs * rate * 1.5;                
     let paidHolPay = phHrs * rate;                  
-    let nightPay = niHrs * rate * 1.5;              
+    
+    // FIX: Night Pay multiplier updated to 3.0x as requested
+    let nightPay = niHrs * rate * 3.0;              
 
     let totalPay = basePay + otPay + holPay + paidHolPay + nightPay; 
 
@@ -776,6 +777,7 @@ function calcReportSalary() {
     document.getElementById("p_nightPay").innerText = fmt(nightPay);
     document.getElementById("p_totalPay").innerText = Math.round(totalPay).toLocaleString();
 }
+
 
 // Generate Photo
 function generateReportPhoto() {
