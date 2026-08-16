@@ -763,8 +763,8 @@ function calcReportSalary() {
     let holPay = hwHrs * rate * 1.5;                
     let paidHolPay = phHrs * rate;                  
     
-    // FIX: Night Pay multiplier updated to 3.0x as requested
-    let nightPay = niHrs * rate * 3.0;              
+    // Yaha 2.0 rakhda matra (1.5 hrs * 2.0 = 3) vayera 34,500 aauchha
+    let nightPay = niHrs * rate * 2.0;              
 
     let totalPay = basePay + otPay + holPay + paidHolPay + nightPay; 
 
