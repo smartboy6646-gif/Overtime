@@ -349,8 +349,8 @@ body.theme-dark .slip-table td { border-color:#555;}
     </div>
 </div>
 
-<!-- App Settings Modal -->
-<div id="settingsModal" class="modal-overlay">
+<!-- App Settings Modal (z-index 3500 ensures it is above missingModal) -->
+<div id="settingsModal" class="modal-overlay" style="z-index: 3500;">
     <div class="modal-box">
         <h3 style="margin-top:0; color:var(--primary);">⚙️ App Settings (सेटिङ्स)</h3>
         
@@ -427,7 +427,11 @@ let currentViewMonth = new Date().toISOString().slice(0, 7);
 let savedHourlyRate = localStorage.getItem("ronnie_hourly_rate") || 11500;
 
 // Settings Logic
-let appSettings = JSON.parse(localStorage.getItem('ronnie_settings'));
+let appSettings = null;
+try {
+    let rawSet = localStorage.getItem('ronnie_settings');
+    if (rawSet) appSettings = JSON.parse(rawSet);
+} catch(e) { }
 
 const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const daysArr = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
@@ -455,11 +459,9 @@ function saveSettings() {
     updateUI(); 
     renderData(); 
     showToast("Settings Saved! ⚙️");
-}
-
-// Show settings on very first launch
-if (!appSettings) {
-    setTimeout(() => { openSettings(); }, 600);
+    
+    // Check missing entries AFTER settings are saved
+    checkMissingEntries();
 }
 
 // KST DATE FUNCTIONS
@@ -1017,10 +1019,17 @@ async function shareNativeImage() {
 // APP INITIALIZATION
 document.getElementById('inputDate').value = getKrDateString();
 updateHeaderDate();
-checkMissingEntries();
 autoDetectDay(); 
 updateMonthSelector(); 
 renderData();
+
+// Priority to Settings Modal on first load
+if (!appSettings || !appSettings.entryMode) {
+    setTimeout(() => { openSettings(); }, 500);
+} else {
+    // If settings are already present, check missing entries directly
+    checkMissingEntries();
+}
 
 // ==========================================
 // PWA ANDROID INSTALLATION LOGIC
