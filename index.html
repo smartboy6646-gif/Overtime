@@ -15,7 +15,7 @@
 <!-- Apple Touch Icon for iPhone/iPad -->
 <link rel="apple-touch-icon" sizes="180x180" href="logos.PNG">
 
-<title>Ronnie Payroll Pro v9.1</title>
+<title>Ronnie Payroll Pro v9.2</title>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
@@ -43,6 +43,9 @@ body { margin:0; font-family:-apple-system,BlinkMacSystemFont,sans-serif; backgr
 /* Top Nav */
 .top-nav { display: flex; justify-content: flex-start; margin-bottom: 5px; position: relative; z-index: 10; padding: 5px 0; }
 .theme-selector { background: var(--card-bg); border: 1px solid var(--primary); color: var(--primary); border-radius: 20px; padding: 6px 14px; font-size: 13px; font-weight: bold; outline: none; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+
+/* PWA Install Button */
+.btn-install { background: #4caf50; color: white; border: none; border-radius: 20px; padding: 6px 14px; font-size: 13px; font-weight: bold; outline: none; box-shadow: 0 2px 5px rgba(0,0,0,0.05); cursor: pointer; margin-left: auto; display: none; }
 
 /* Header Profile */
 .header-area { text-align: center; margin-bottom: 15px; position: relative; }
@@ -144,11 +147,14 @@ body.theme-dark .slip-table td { border-color:#555;}
             <option value="default">🔵 Blue Theme</option>
             <option value="dark">🌙 Dark Theme</option>
         </select>
+        <button id="installAppBtn" class="btn-install">📲 Install App</button>
     </div>
 
     <div class="header-area">
         <img src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" alt="Logo" class="app-logo">
         <h2>Ronnie Ruchal</h2>
+        <!-- Korea Time Header -->
+        <div id="krDateHeader" style="font-size: 13px; color: var(--primary); font-weight: bold; margin-top: 5px; background: var(--input-bg); padding: 6px 12px; border-radius: 20px; display: inline-block; border: 1px solid var(--border-color);"></div>
     </div>
     
     <div id="toast">Data Saved! ✅</div>
@@ -278,7 +284,7 @@ body.theme-dark .slip-table td { border-color:#555;}
                         <th class="hl-bg" style="width:20%;">연장근로</th><td id="r_otHrs" style="width:10%;">0.0</td>
                     </tr>
                     <tr>
-                        <th class="hl-bg">주휴/유급휴일</th><td id="r_paidHolHrs">0.0</td>
+                     <th class="hl-bg">주휴/유급휴일/연차</th><td id="r_paidHolHrs">0.0</td>
                         <th class="hl-bg">야간근로</th><td id="r_nightHrs">0.0</td>
                         <th class="hl-bg">휴일근로</th><td id="r_holWorkHrs">0.0</td>
                     </tr>
@@ -296,7 +302,8 @@ body.theme-dark .slip-table td { border-color:#555;}
                     </tr>
                     <tr>
                         <th class="hl-bg">휴일근로수당</th><td id="p_holPay" style="color:#d32f2f; text-align:right; padding-right:10px;">0</td>
-                        <th class="hl-bg">주휴/유급휴일수당</th><td id="p_paidHolPay" style="color:#d32f2f; text-align:right; padding-right:10px;">0</td>
+                        <th class="hl-bg">주휴/유급휴일/연차수당</th><td id="p_paidHolPay" style="color:#d32f2f; text-align:right; padding-right:10px;">0</td>
+
                     </tr>
                     <tr>
                         <th class="hl-bg">야간근로금액</th><td id="p_nightPay" style="color:#d32f2f; text-align:right; padding-right:10px;">-</td>
@@ -345,6 +352,19 @@ body.theme-dark .slip-table td { border-color:#555;}
     </div>
 </div>
 
+<!-- Missing Entry Modal -->
+<div id="missingModal" class="modal-overlay">
+    <div class="modal-box">
+        <h3 style="margin-top:0; color:#e65100;">⚠️ Missing Entries!</h3>
+        <p style="font-size:13px; color:var(--text); margin-bottom:15px; line-height:1.5;">
+            तपाईंले निम्न दिनहरूको डाटा राख्न छुटाउनु भएको छ:<br>
+            <span style="color:#777; font-size:11px;">(You missed entries for these days)</span><br><br>
+            <b id="missingDatesText" style="color:#d32f2f; font-size: 14px;"></b>
+        </p>
+        <button class="action-btn btn-blue" onclick="document.getElementById('missingModal').classList.remove('active')">OK / ठीक छ</button>
+    </div>
+</div>
+
 <nav class="bottom-nav" id="mainBottomNav">
     <button class="nav-item active" onclick="switchTab('tabHome', this)">
         <span class="nav-icon">🏠</span><span>Home</span>
@@ -358,9 +378,16 @@ body.theme-dark .slip-table td { border-color:#555;}
 </nav>
 
 <script>
-const STORE_KEY="ronnie_pro_v9.0";
-// Migrate old data seamlessly
-let entries=JSON.parse(localStorage.getItem("ronnie_pro_v8.4")||localStorage.getItem(STORE_KEY)||"[]");
+// --- CRITICAL FIX 1: Prevent Auto-Delete Bug ---
+const STORE_KEY = "ronnie_pro_v9.2";
+// App will load NEW key first. If empty, checks old keys to import past data securely.
+let entries = JSON.parse(localStorage.getItem(STORE_KEY) || localStorage.getItem("ronnie_pro_v9.0") || localStorage.getItem("ronnie_pro_v8.4") || "[]");
+
+// Automatically save to the new key if it was using an older one
+if (!localStorage.getItem(STORE_KEY) && entries.length > 0) {
+    localStorage.setItem(STORE_KEY, JSON.stringify(entries));
+}
+
 let pendingEntry = null; 
 let is24HourFormat = false; 
 let isEditing = false;
@@ -371,6 +398,83 @@ let savedHourlyRate = localStorage.getItem("ronnie_hourly_rate") || 11500;
 const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const daysArr = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
 const times=["5:30 PM","6:00 PM","6:30 PM","7:00 PM","7:30 PM","8:00 PM","8:30 PM","9:00 PM","9:30 PM","10:00 PM","10:30 PM","11:00 PM","11:30 PM","12:00 AM"];
+
+// KST DATE FUNCTIONS
+function getKrDateObject() {
+    let krTime = new Date().toLocaleString("en-US", { timeZone: "Asia/Seoul" });
+    return new Date(krTime);
+}
+
+function getKrDateString() {
+    let d = getKrDateObject();
+    let yyyy = d.getFullYear();
+    let mm = String(d.getMonth() + 1).padStart(2, '0');
+    let dd = String(d.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+}
+
+function updateHeaderDate() {
+    let d = getKrDateObject();
+    const days = ["일 (Sun)", "월 (Mon)", "화 (Tue)", "수 (Wed)", "목 (Thu)", "금 (Fri)", "토 (Sat)"];
+    let dayName = days[d.getDay()];
+    document.getElementById("krDateHeader").innerText = `📅 KST: ${getKrDateString()} [${dayName}]`;
+}
+
+// --- CRITICAL FIX 2: Smart Missing Entry Logic ---
+function checkMissingEntries() {
+    if (!entries || entries.length === 0) return;
+    
+    let todayDate = getKrDateObject();
+    todayDate.setHours(0,0,0,0);
+    
+    // Get the current month prefix (e.g., "2026-08")
+    let yyyy = todayDate.getFullYear();
+    let mm = String(todayDate.getMonth() + 1).padStart(2, '0');
+    let currentMonthPrefix = `${yyyy}-${mm}`;
+    
+    // Check missing days ONLY for this active month
+    let thisMonthEntries = entries.filter(e => e.date.startsWith(currentMonthPrefix));
+    
+    // IF data entry has NOT started for this month, don't show the popup
+    if (thisMonthEntries.length === 0) return;
+    
+    // Get the very FIRST date they entered for THIS MONTH
+    let firstEntryDateThisMonth = new Date(thisMonthEntries[0].date);
+    firstEntryDateThisMonth.setHours(0,0,0,0);
+    
+    let entryDates = new Set(thisMonthEntries.map(e => e.date));
+    let missing = [];
+    
+    // Start counting missing days from that FIRST entry up to YESTERDAY
+    let checkDate = new Date(firstEntryDateThisMonth);
+    
+    while (checkDate < todayDate) {
+        let cyyyy = checkDate.getFullYear();
+        let cmm = String(checkDate.getMonth() + 1).padStart(2, '0');
+        let cdd = String(checkDate.getDate()).padStart(2, '0');
+        let dStr = `${cyyyy}-${cmm}-${cdd}`;
+        
+        if (!entryDates.has(dStr)) {
+            missing.push(dStr);
+        }
+        checkDate.setDate(checkDate.getDate() + 1);
+    }
+    
+    if (missing.length > 0) {
+        let displayMissing = missing;
+        let moreCount = 0;
+        if (missing.length > 7) {
+            displayMissing = missing.slice(-7);
+            moreCount = missing.length - 7;
+        }
+        
+        let missingStr = displayMissing.join("<br>");
+        if (moreCount > 0) missingStr += `<br><i style="font-size:11px; color:#555;">...and ${moreCount} more days</i>`;
+        
+        document.getElementById("missingDatesText").innerHTML = missingStr;
+        document.getElementById("missingModal").classList.add("active");
+    }
+}
 
 function switchTab(tabId, btn) {
     document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
@@ -437,7 +541,7 @@ function updateUI(){
 function updateMonthSelector() {
     const sel = document.getElementById("monthSelector"); sel.innerHTML = "";
     let avail = new Set(); entries.forEach(e => avail.add(e.date.slice(0, 7)));
-    avail.add(new Date().toISOString().slice(0, 7));
+    avail.add(getKrDateString().slice(0, 7)); // Use KST Month
     let sorted = Array.from(avail).sort().reverse();
     sorted.forEach(m => { let [y, mo] = m.split('-'); sel.add(new Option(`${months[parseInt(mo)-1]} ${y}`, m)); });
     if(sorted.includes(currentViewMonth)) sel.value = currentViewMonth;
@@ -466,17 +570,14 @@ function confirmSave() {
 
     if(workedVal === "yes") {
         let [t, m] = outVal.split(' '), [h, min] = t.split(':').map(Number);
-        
-        // --- 12:00 AM Fix Applied Here ---
         if (outVal === "12:00 AM") {
-            h = 24; min = 0; // Triggers full normal & night OT 
+            h = 24; min = 0;
         } else {
             if(h===12) h=(m==='AM')?0:12; else if(m==='PM') h+=12;
         }
         totalMins = (h*60)+min;
     }
 
-    // Calculations based on the Korean Payslip Logic
     if (type === "sunday" || type === "holiday") {
         if (workedVal === "yes") { 
             normalOt = Math.max(0, (Math.min(totalMins, 1320) - 1050) / 60); 
@@ -512,6 +613,8 @@ function executeSave() {
     }
     entries.push(pendingEntry);
     entries.sort((a,b)=>new Date(a.date)-new Date(b.date));
+    
+    // Save to the Correct Key!
     localStorage.setItem(STORE_KEY, JSON.stringify(entries));
     
     document.getElementById("entryNote").value = ""; 
@@ -539,7 +642,7 @@ function editEntry(dateStr) {
 function generateTableRows(dataList, targetTbodyId, includeMissing = true) {
     let body = document.getElementById(targetTbodyId); body.innerHTML = "";
     if(dataList.length === 0) { body.innerHTML = "<tr><td colspan='6' style='color:#999;'>No records found</td></tr>"; return; }
-    let todayStr = new Date().toISOString().split('T')[0];
+    let todayStr = getKrDateString();
 
     dataList.forEach((e) => {
         let tr = document.createElement("tr");
@@ -628,10 +731,13 @@ function renderData() {
             if(isWorked) { wD++; normalHrs += 8; otHrs += eOt; nightHrs += eNi; }
             else { absentD++; }
         }
-        else if(e.type === "personal_leave") {
+                else if(e.type === "personal_leave") {
             sum_leave++;
-            leaveD++; normalHrs += 8;
+            leaveD++; 
+            paidHolHrs += 8; 
         }
+
+        
         else if(e.type === "saturday") {
             sum_sat++;
             if(isWorked) { satWorkD++; otHrs += eOt; nightHrs += eNi; }
@@ -647,7 +753,6 @@ function renderData() {
                 otHrs += eOt; 
                 nightHrs += eNi; 
                 
-                // Track Public Holiday Extra OT to apply 3x rate later
                 if(e.type === "holiday") {
                     pubHolOtHrs += eOt;
                 }
@@ -668,10 +773,8 @@ function renderData() {
     document.getElementById("s_holWorkHrs").innerText = holWorkHrs.toFixed(1);
     document.getElementById("s_nightHrs").innerText = nightHrs.toFixed(1);
     
-    // Save hidden public holiday OT hours
     setT("s_pubHolOtHrs", pubHolOtHrs);
 
-    // Populate Visible Display for Dark Summary Card
     document.getElementById("disp_wD").innerText = sum_wD + " d";
     document.getElementById("disp_leaveD").innerText = sum_leave + " d";
     document.getElementById("disp_satD").innerText = sum_sat + " d";
@@ -754,7 +857,6 @@ function calcReportSalary() {
     let hwHrs = parseFloat(document.getElementById("r_holWorkHrs").innerText) || 0;
     let niHrs = parseFloat(document.getElementById("r_nightHrs").innerText) || 0;
     
-    // Extracted Public Holiday OT Hours
     let pubHolOtHrs = parseFloat(document.getElementById("r_pubHolOtHrs").innerText) || 0;
     let standardOtHrs = oHrs - pubHolOtHrs;
 
@@ -762,8 +864,6 @@ function calcReportSalary() {
     let otPay = (standardOtHrs * rate * 1.5) + (pubHolOtHrs * rate * 3.0); 
     let holPay = hwHrs * rate * 1.5;                
     let paidHolPay = phHrs * rate;                  
-    
-    // Yaha 2.0 rakhda matra (1.5 hrs * 2.0 = 3) vayera 34,500 aauchha
     let nightPay = niHrs * rate * 2.0;              
 
     let totalPay = basePay + otPay + holPay + paidHolPay + nightPay; 
@@ -778,8 +878,6 @@ function calcReportSalary() {
     document.getElementById("p_totalPay").innerText = Math.round(totalPay).toLocaleString();
 }
 
-
-// Generate Photo
 function generateReportPhoto() {
     window.scrollTo(0, 0);
     showToast("Processing... ⏳");
@@ -793,7 +891,6 @@ function generateReportPhoto() {
     }, 500);
 }
 
-// Native Share
 async function shareNativeImage() {
     let imgUrl = document.getElementById('resultImage').src;
     try {
@@ -804,8 +901,64 @@ async function shareNativeImage() {
     } catch(e) { alert("Please long-press the image to save it."); }
 }
 
-document.getElementById('inputDate').value = new Date().toISOString().split('T')[0];
-autoDetectDay(); updateMonthSelector(); renderData();
+// APP INITIALIZATION
+document.getElementById('inputDate').value = getKrDateString();
+updateHeaderDate();
+checkMissingEntries();
+autoDetectDay(); 
+updateMonthSelector(); 
+renderData();
+
+// ==========================================
+// PWA ANDROID INSTALLATION LOGIC
+// ==========================================
+
+// Register Service Worker
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./service-worker.js')
+            .then(reg => console.log('Service Worker registered', reg))
+            .catch(err => console.error('Service Worker registration failed', err));
+    });
+}
+
+// Handle Android Chrome Install Prompt
+let deferredPrompt;
+const installAppBtn = document.getElementById('installAppBtn');
+
+window.addEventListener('beforeinstallprompt', (e) => {
+    // Prevent Chrome from automatically showing the mini-infobar
+    e.preventDefault();
+    // Stash the event so it can be triggered later.
+    deferredPrompt = e;
+    // Update UI notify the user they can install the PWA
+    installAppBtn.style.display = 'block';
+});
+
+installAppBtn.addEventListener('click', async () => {
+    if (deferredPrompt) {
+        // Show the native install prompt
+        deferredPrompt.prompt();
+        // Wait for the user to respond to the prompt
+        const { outcome } = await deferredPrompt.userChoice;
+        if (outcome === 'accepted') {
+            console.log('User accepted the PWA prompt');
+        } else {
+            console.log('User dismissed the PWA prompt');
+        }
+        // Clear the deferredPrompt variable, it can only be used once.
+        deferredPrompt = null;
+        // Hide the install button
+        installAppBtn.style.display = 'none';
+    }
+});
+
+// Hide button if successfully installed
+window.addEventListener('appinstalled', () => {
+    deferredPrompt = null;
+    installAppBtn.style.display = 'none';
+    console.log('PWA was successfully installed');
+});
 </script>
 </body>
 </html>
