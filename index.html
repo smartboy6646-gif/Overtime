@@ -15,7 +15,7 @@
 <!-- Apple Touch Icon for iPhone/iPad -->
 <link rel="apple-touch-icon" sizes="180x180" href="logos.PNG">
 
-<title>Ronnie Payroll Pro v9.2</title>
+<title>Ronnie Payroll Pro v9.3</title>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
@@ -41,8 +41,8 @@ body { margin:0; font-family:-apple-system,BlinkMacSystemFont,sans-serif; backgr
 .container { max-width:420px; margin:auto; padding:12px; }
 
 /* Top Nav */
-.top-nav { display: flex; justify-content: flex-start; margin-bottom: 5px; position: relative; z-index: 10; padding: 5px 0; }
-.theme-selector { background: var(--card-bg); border: 1px solid var(--primary); color: var(--primary); border-radius: 20px; padding: 6px 14px; font-size: 13px; font-weight: bold; outline: none; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+.top-nav { display: flex; justify-content: flex-start; margin-bottom: 5px; position: relative; z-index: 10; padding: 5px 0; align-items: center; }
+.theme-selector { background: var(--card-bg); border: 1px solid var(--primary); color: var(--primary); border-radius: 20px; padding: 6px 14px; font-size: 13px; font-weight: bold; outline: none; box-shadow: 0 2px 5px rgba(0,0,0,0.05); cursor: pointer; }
 
 /* PWA Install Button */
 .btn-install { background: #4caf50; color: white; border: none; border-radius: 20px; padding: 6px 14px; font-size: 13px; font-weight: bold; outline: none; box-shadow: 0 2px 5px rgba(0,0,0,0.05); cursor: pointer; margin-left: auto; display: none; }
@@ -147,6 +147,7 @@ body.theme-dark .slip-table td { border-color:#555;}
             <option value="default">🔵 Blue Theme</option>
             <option value="dark">🌙 Dark Theme</option>
         </select>
+        <button class="theme-selector" onclick="openSettings()" style="margin-left: 8px; padding: 6px 10px;">⚙️</button>
         <button id="installAppBtn" class="btn-install">📲 Install App</button>
     </div>
 
@@ -181,6 +182,12 @@ body.theme-dark .slip-table td { border-color:#555;}
                 </select>
             </div>
             
+            <!-- In Time Option -->
+            <div id="inBox" class="hide">
+                <label>In Time (출근 시간)</label>
+                <select id="inTime"></select>
+            </div>
+
             <div id="outBox">
                 <label>Out Time (퇴근 시간)</label>
                 <select id="outTime"></select>
@@ -196,7 +203,7 @@ body.theme-dark .slip-table td { border-color:#555;}
             <h3 style="margin-top:0; font-size:14px; color:var(--primary); text-align:center;">Recent Entries (최근 기록)</h3>
             <table class="hist-table">
                 <thead>
-                    <tr><th class="col-date">Date</th><th class="col-day">Day</th><th class="col-hrs">Hrs</th><th class="col-ot">OT</th><th class="col-out">Out</th><th class="col-note">Note</th></tr>
+                    <tr><th class="col-date">Date</th><th class="col-day">Day</th><th class="col-hrs">Hrs</th><th class="col-ot">OT</th><th class="col-out">Time</th><th class="col-note">Note</th></tr>
                 </thead>
                 <tbody id="recentHistoryBody"></tbody>
             </table>
@@ -216,7 +223,7 @@ body.theme-dark .slip-table td { border-color:#555;}
             
             <table class="hist-table">
                 <thead>
-                    <tr><th class="col-date">Date</th><th class="col-day">Day</th><th class="col-hrs">Hrs</th><th class="col-ot">OT</th><th class="col-out">Out</th><th class="col-note">Note</th></tr>
+                    <tr><th class="col-date">Date</th><th class="col-day">Day</th><th class="col-hrs">Hrs</th><th class="col-ot">OT</th><th class="col-out">Time</th><th class="col-note">Note</th></tr>
                 </thead>
                 <tbody id="fullHistoryBody"></tbody>
             </table>
@@ -316,7 +323,7 @@ body.theme-dark .slip-table td { border-color:#555;}
         <div style="background:var(--card-bg); border-radius:12px; overflow:hidden; border:1px solid var(--border-color);">
             <table class="hist-table" style="margin-bottom: 0;">
                 <thead style="background:var(--border-color);">
-                    <tr><th class="col-date">Date</th><th class="col-day">Day</th><th class="col-hrs">Hrs</th><th class="col-ot">OT</th><th class="col-out">Out</th><th class="col-note">Note</th></tr>
+                    <tr><th class="col-date">Date</th><th class="col-day">Day</th><th class="col-hrs">Hrs</th><th class="col-ot">OT</th><th class="col-out">Time</th><th class="col-note">Note</th></tr>
                 </thead>
                 <tbody id="repHistoryBody"></tbody>
             </table>
@@ -339,6 +346,30 @@ body.theme-dark .slip-table td { border-color:#555;}
         <div id="confirmText" class="confirm-details"></div>
         <button class="action-btn btn-green" onclick="executeSave()">Confirm & Save / 저장 ✅</button>
         <button class="action-btn btn-red" onclick="closeConfirmModal()">Cancel / 취소 ❌</button>
+    </div>
+</div>
+
+<!-- App Settings Modal -->
+<div id="settingsModal" class="modal-overlay">
+    <div class="modal-box">
+        <h3 style="margin-top:0; color:var(--primary);">⚙️ App Settings (सेटिङ्स)</h3>
+        
+        <label style="text-align:left; color:#555; margin-top:10px;">Entry Mode (रेकर्ड राख्ने तरिका)</label>
+        <select id="setEntryMode" style="margin-bottom:15px; border:2px solid var(--primary);">
+            <option value="1">1 Time (बेलुका मात्र / Out Only)</option>
+            <option value="2">2 Times (बिहान र बेलुका / In & Out)</option>
+        </select>
+
+        <label style="text-align:left; color:#555;">Evening OT Starts At (बेलुकाको OT सुरु हुने समय)</label>
+        <select id="setOtStart" style="margin-bottom:20px; border:2px solid var(--primary);">
+            <option value="1020">5:00 PM</option>
+            <option value="1050">5:30 PM</option>
+            <option value="1080">6:00 PM</option>
+            <option value="1110">6:30 PM</option>
+            <option value="1140">7:00 PM</option>
+        </select>
+
+        <button class="action-btn btn-green" onclick="saveSettings()">Save Settings / सेभ गर्नुहोस् ✅</button>
     </div>
 </div>
 
@@ -379,9 +410,9 @@ body.theme-dark .slip-table td { border-color:#555;}
 
 <script>
 // --- CRITICAL FIX 1: Prevent Auto-Delete Bug ---
-const STORE_KEY = "ronnie_pro_v9.2";
+const STORE_KEY = "ronnie_pro_v9.3";
 // App will load NEW key first. If empty, checks old keys to import past data securely.
-let entries = JSON.parse(localStorage.getItem(STORE_KEY) || localStorage.getItem("ronnie_pro_v9.0") || localStorage.getItem("ronnie_pro_v8.4") || "[]");
+let entries = JSON.parse(localStorage.getItem(STORE_KEY) || localStorage.getItem("ronnie_pro_v9.2") || localStorage.getItem("ronnie_pro_v9.0") || "[]");
 
 // Automatically save to the new key if it was using an older one
 if (!localStorage.getItem(STORE_KEY) && entries.length > 0) {
@@ -395,9 +426,41 @@ let editTargetDate = null;
 let currentViewMonth = new Date().toISOString().slice(0, 7);
 let savedHourlyRate = localStorage.getItem("ronnie_hourly_rate") || 11500;
 
+// Settings Logic
+let appSettings = JSON.parse(localStorage.getItem('ronnie_settings'));
+
 const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const daysArr = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
+const morningTimes = ["6:00 AM", "6:30 AM", "7:00 AM", "7:30 AM", "8:00 AM"];
 const times=["5:30 PM","6:00 PM","6:30 PM","7:00 PM","7:30 PM","8:00 PM","8:30 PM","9:00 PM","9:30 PM","10:00 PM","10:30 PM","11:00 PM","11:30 PM","12:00 AM"];
+
+// Settings Modal Functions
+function openSettings() {
+    if(appSettings) {
+        document.getElementById("setEntryMode").value = appSettings.entryMode;
+        document.getElementById("setOtStart").value = appSettings.otStartMins;
+    } else {
+        document.getElementById("setEntryMode").value = "1";
+        document.getElementById("setOtStart").value = "1050";
+    }
+    document.getElementById("settingsModal").classList.add("active");
+}
+
+function saveSettings() {
+    let mode = document.getElementById("setEntryMode").value;
+    let otStart = parseInt(document.getElementById("setOtStart").value);
+    appSettings = { entryMode: mode, otStartMins: otStart };
+    localStorage.setItem('ronnie_settings', JSON.stringify(appSettings));
+    document.getElementById("settingsModal").classList.remove("active");
+    updateUI(); 
+    renderData(); 
+    showToast("Settings Saved! ⚙️");
+}
+
+// Show settings on very first launch
+if (!appSettings) {
+    setTimeout(() => { openSettings(); }, 600);
+}
 
 // KST DATE FUNCTIONS
 function getKrDateObject() {
@@ -420,32 +483,27 @@ function updateHeaderDate() {
     document.getElementById("krDateHeader").innerText = `📅 KST: ${getKrDateString()} [${dayName}]`;
 }
 
-// --- CRITICAL FIX 2: Smart Missing Entry Logic ---
+// Smart Missing Entry Logic
 function checkMissingEntries() {
     if (!entries || entries.length === 0) return;
     
     let todayDate = getKrDateObject();
     todayDate.setHours(0,0,0,0);
     
-    // Get the current month prefix (e.g., "2026-08")
     let yyyy = todayDate.getFullYear();
     let mm = String(todayDate.getMonth() + 1).padStart(2, '0');
     let currentMonthPrefix = `${yyyy}-${mm}`;
     
-    // Check missing days ONLY for this active month
     let thisMonthEntries = entries.filter(e => e.date.startsWith(currentMonthPrefix));
     
-    // IF data entry has NOT started for this month, don't show the popup
     if (thisMonthEntries.length === 0) return;
     
-    // Get the very FIRST date they entered for THIS MONTH
     let firstEntryDateThisMonth = new Date(thisMonthEntries[0].date);
     firstEntryDateThisMonth.setHours(0,0,0,0);
     
     let entryDates = new Set(thisMonthEntries.map(e => e.date));
     let missing = [];
     
-    // Start counting missing days from that FIRST entry up to YESTERDAY
     let checkDate = new Date(firstEntryDateThisMonth);
     
     while (checkDate < todayDate) {
@@ -496,7 +554,7 @@ function toggleTimeFormat() {
     renderData();
 }
 
-function formatOutTime(timeStr) {
+function formatTime(timeStr) {
     if (!timeStr) return "-";
     if (!is24HourFormat) return timeStr;
     let [time, modifier] = timeStr.split(' ');
@@ -505,6 +563,17 @@ function formatOutTime(timeStr) {
     if (hours === '12') hours = '00';
     if (modifier === 'PM') hours = parseInt(hours, 10) + 12;
     return `${hours.toString().padStart(2, '0')}:${minutes}`;
+}
+
+function parseTimeToMins(timeStr) {
+    if(!timeStr) return 0;
+    let [t, m] = timeStr.split(' '), [h, min] = t.split(':').map(Number);
+    if (timeStr === "12:00 AM") {
+        h = 24; min = 0;
+    } else {
+        if(h===12) h=(m==='AM')?0:12; else if(m==='PM') h+=12;
+    }
+    return (h*60)+min;
 }
 
 function showToast(msg) {
@@ -527,15 +596,30 @@ function autoDetectDay() {
 }
 
 function updateUI(){
-    let day=document.getElementById("dayType").value, out=document.getElementById("outTime");
-    let currentOutVal = out.value; out.innerHTML="";
-    times.forEach(t=>{ out.add(new Option(t, t)); });
-    if(currentOutVal && times.includes(currentOutVal)) out.value = currentOutVal;
+    let day=document.getElementById("dayType").value;
+    let out=document.getElementById("outTime");
+    let inT=document.getElementById("inTime");
+    
+    if(out.options.length === 0) {
+        times.forEach(t=>{ out.add(new Option(t, t)); });
+    }
+    if(inT.options.length === 0) {
+        morningTimes.forEach(t=>{ inT.add(new Option(t, t)); });
+        inT.value = "8:00 AM";
+    }
     
     let isFixedDay = (day === "weekday" || day === "personal_leave");
     document.getElementById("workedBox").classList.toggle("hide", isFixedDay);
     let workedVal = (day === "weekday") ? "yes" : ((day === "personal_leave") ? "no" : document.getElementById("worked").value);
+    
     document.getElementById("outBox").classList.toggle("hide", workedVal === "no");
+    
+    // Show/Hide In Time box based on settings and work status
+    if (appSettings && appSettings.entryMode === "2" && workedVal === "yes") {
+        document.getElementById("inBox").classList.remove("hide");
+    } else {
+        document.getElementById("inBox").classList.add("hide");
+    }
 }
 
 function updateMonthSelector() {
@@ -562,42 +646,51 @@ function confirmSave() {
         return alert("Data already exists! / 이미 기록이 있습니다! Edit in History.");
     }
 
-    let type = document.getElementById("dayType").value, outVal = document.getElementById("outTime").value;
+    let type = document.getElementById("dayType").value;
+    let outVal = document.getElementById("outTime").value;
+    let inVal = null;
     let workedVal = (type === "weekday") ? "yes" : ((type === "personal_leave") ? "no" : document.getElementById("worked").value);
     let noteVal = document.getElementById("entryNote").value.trim();
     
     let normalOt = 0, nightOt = 0, totalMins = 0;
+    let otStartMins = appSettings ? appSettings.otStartMins : 1050; // Default 5:30 PM
+    let morningOt = 0;
 
     if(workedVal === "yes") {
-        let [t, m] = outVal.split(' '), [h, min] = t.split(':').map(Number);
-        if (outVal === "12:00 AM") {
-            h = 24; min = 0;
-        } else {
-            if(h===12) h=(m==='AM')?0:12; else if(m==='PM') h+=12;
+        totalMins = parseTimeToMins(outVal);
+        
+        // Calculate morning OT if dual mode is active
+        if(appSettings && appSettings.entryMode === "2") {
+            inVal = document.getElementById("inTime").value;
+            let inMins = parseTimeToMins(inVal); // e.g. 6:00 AM = 360
+            morningOt = Math.max(0, (480 - inMins) / 60); // 8:00 AM = 480
         }
-        totalMins = (h*60)+min;
-    }
 
-    if (type === "sunday" || type === "holiday") {
-        if (workedVal === "yes") { 
-            normalOt = Math.max(0, (Math.min(totalMins, 1320) - 1050) / 60); 
+        if (type === "sunday" || type === "holiday") {
+            normalOt = Math.max(0, (Math.min(totalMins, 1320) - otStartMins) / 60) + morningOt; 
             nightOt = Math.max(0, (totalMins - 1320) / 60); 
-        }
-    } else if (type === "saturday") {
-        if (workedVal === "yes") { 
-            normalOt = 8 + Math.max(0, (Math.min(totalMins, 1320) - 1050) / 60); 
+        } else if (type === "saturday") {
+            normalOt = 8 + Math.max(0, (Math.min(totalMins, 1320) - otStartMins) / 60) + morningOt; 
             nightOt = Math.max(0, (totalMins - 1320) / 60); 
+        } else if (type === "weekday") {
+            normalOt = Math.max(0, (Math.min(totalMins, 1320) - otStartMins) / 60) + morningOt; 
+            nightOt = Math.max(0, (totalMins - 1320) / 60);
         }
-    } else if (type === "weekday") {
-        normalOt = Math.max(0, (Math.min(totalMins, 1320) - 1050) / 60); 
-        nightOt = Math.max(0, (totalMins - 1320) / 60);
     }
     
-    pendingEntry = { date, type, worked:workedVal, normalOt, nightOt, outVal, note: noteVal };
+    pendingEntry = { date, type, worked:workedVal, normalOt, nightOt, outVal, inVal, note: noteVal };
 
     let typeNames = { "weekday": "정상출근 (Weekday)", "saturday": "토요근무 (Saturday)", "sunday": "유급휴일 (Sunday)", "holiday": "휴일근로 (Holiday)", "personal_leave": "연차 (Leave)" };
     let html = `<b>Date:</b> ${date}<br><b>Type:</b> ${typeNames[type]}<br><b>Worked:</b> ${workedVal === 'yes' ? 'Yes' : 'No'}<br>`;
-    if(workedVal === 'yes') html += `<b>Out:</b> ${outVal}<br><b>New OT calculated:</b> ${normalOt.toFixed(1)} h`;
+    
+    if(workedVal === 'yes') {
+        if(appSettings && appSettings.entryMode === "2") {
+            html += `<b>In:</b> ${inVal} | <b>Out:</b> ${outVal}<br>`;
+        } else {
+            html += `<b>Out:</b> ${outVal}<br>`;
+        }
+        html += `<b>New OT calculated:</b> ${normalOt.toFixed(1)} h`;
+    }
 
     document.getElementById("confirmText").innerHTML = html;
     document.getElementById("confirmModal").classList.add("active");
@@ -614,7 +707,6 @@ function executeSave() {
     entries.push(pendingEntry);
     entries.sort((a,b)=>new Date(a.date)-new Date(b.date));
     
-    // Save to the Correct Key!
     localStorage.setItem(STORE_KEY, JSON.stringify(entries));
     
     document.getElementById("entryNote").value = ""; 
@@ -629,8 +721,18 @@ function editEntry(dateStr) {
     let entry = entries.find(e => e.date === dateStr); if (!entry) return;
     document.getElementById("inputDate").value = entry.date;
     document.getElementById("dayType").value = entry.type; updateUI(); 
+    
     if (entry.type !== "weekday" && entry.type !== "personal_leave") { document.getElementById("worked").value = entry.worked; updateUI(); }
-    if (entry.worked === "yes" && entry.outVal) document.getElementById("outTime").value = entry.outVal;
+    
+    if (entry.worked === "yes") {
+        if (entry.outVal) document.getElementById("outTime").value = entry.outVal;
+        if (entry.inVal) {
+            document.getElementById("inTime").value = entry.inVal;
+        } else {
+            document.getElementById("inTime").value = "8:00 AM";
+        }
+    }
+    
     document.getElementById("entryNote").value = entry.note || "";
     
     isEditing = true; editTargetDate = entry.date;
@@ -655,7 +757,20 @@ function generateTableRows(dataList, targetTbodyId, includeMissing = true) {
             let d = new Date(e.date);
             if(e.type !== "weekday" && e.type !== "personal_leave") tr.className = "holiday-row";
             let typeLabel = e.type === "personal_leave" ? "LV" : daysArr[d.getDay()];
-            let outTimeDisplay = (e.worked === "yes" && e.outVal) ? formatOutTime(e.outVal) : "-";
+            
+            let timeDisplay = "-";
+            if(e.worked === "yes" && e.outVal) {
+                if(e.inVal) {
+                    timeDisplay = `<div style="font-size:10px; line-height:1.2; color:#555;">In: <span style="font-weight:bold; color:var(--text);">${formatTime(e.inVal)}</span><br>Out: <span style="font-weight:bold; color:var(--text);">${formatTime(e.outVal)}</span></div>`;
+                } else {
+                    timeDisplay = formatTime(e.outVal);
+                }
+            }
+            
+            // Adjust styles for holiday row dual time
+            if(e.type !== "weekday" && e.type !== "personal_leave" && e.inVal) {
+                timeDisplay = timeDisplay.replace(/color:#555;/g, "color:#ffebee;").replace(/color:var\(--text\);/g, "color:white;");
+            }
             
             let dot = (e.date === todayStr && targetTbodyId !== "repHistoryBody") ? `<div class="dot"></div>` : '';
             
@@ -677,7 +792,7 @@ function generateTableRows(dataList, targetTbodyId, includeMissing = true) {
                             <td class="col-day"><b>${typeLabel}</b></td>
                             <td class="col-hrs">${displayBasic}</td>
                             <td class="col-ot"><b>${totalOt}</b></td>
-                            <td class="col-out">${outTimeDisplay}</td>
+                            <td class="col-out">${timeDisplay}</td>
                             <td class="col-note">${displayNote}</td>`;
 
             if (targetTbodyId === "fullHistoryBody") {
@@ -736,8 +851,6 @@ function renderData() {
             leaveD++; 
             paidHolHrs += 8; 
         }
-
-        
         else if(e.type === "saturday") {
             sum_sat++;
             if(isWorked) { satWorkD++; otHrs += eOt; nightHrs += eNi; }
@@ -913,7 +1026,6 @@ renderData();
 // PWA ANDROID INSTALLATION LOGIC
 // ==========================================
 
-// Register Service Worker
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
         navigator.serviceWorker.register('./service-worker.js')
@@ -922,38 +1034,29 @@ if ('serviceWorker' in navigator) {
     });
 }
 
-// Handle Android Chrome Install Prompt
 let deferredPrompt;
 const installAppBtn = document.getElementById('installAppBtn');
 
 window.addEventListener('beforeinstallprompt', (e) => {
-    // Prevent Chrome from automatically showing the mini-infobar
     e.preventDefault();
-    // Stash the event so it can be triggered later.
     deferredPrompt = e;
-    // Update UI notify the user they can install the PWA
     installAppBtn.style.display = 'block';
 });
 
 installAppBtn.addEventListener('click', async () => {
     if (deferredPrompt) {
-        // Show the native install prompt
         deferredPrompt.prompt();
-        // Wait for the user to respond to the prompt
         const { outcome } = await deferredPrompt.userChoice;
         if (outcome === 'accepted') {
             console.log('User accepted the PWA prompt');
         } else {
             console.log('User dismissed the PWA prompt');
         }
-        // Clear the deferredPrompt variable, it can only be used once.
         deferredPrompt = null;
-        // Hide the install button
         installAppBtn.style.display = 'none';
     }
 });
 
-// Hide button if successfully installed
 window.addEventListener('appinstalled', () => {
     deferredPrompt = null;
     installAppBtn.style.display = 'none';
