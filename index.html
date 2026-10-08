@@ -15,7 +15,7 @@
 <!-- Apple Touch Icon for iPhone/iPad -->
 <link rel="apple-touch-icon" sizes="180x180" href="logos.PNG">
 
-<title>Ronnie Payroll Pro v9.3</title>
+<title>Ronnie Payroll Pro</title>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
@@ -409,12 +409,19 @@ body.theme-dark .slip-table td { border-color:#555;}
 </nav>
 
 <script>
-// --- CRITICAL FIX 1: Prevent Auto-Delete Bug ---
-const STORE_KEY = "ronnie_pro_v9.3";
-// App will load NEW key first. If empty, checks old keys to import past data securely.
-let entries = JSON.parse(localStorage.getItem(STORE_KEY) || localStorage.getItem("ronnie_pro_v9.2") || localStorage.getItem("ronnie_pro_v9.0") || "[]");
+// --- PERMANENT STORAGE FIX ---
+const STORE_KEY = "ronnie_payroll_permanent_data";
 
-// Automatically save to the new key if it was using an older one
+// App will load NEW permanent key first. If empty, checks ALL old keys to import past data securely.
+let entries = JSON.parse(
+    localStorage.getItem(STORE_KEY) || 
+    localStorage.getItem("ronnie_pro_v9.3") || 
+    localStorage.getItem("ronnie_pro_v9.2") || 
+    localStorage.getItem("ronnie_pro_v9.0") || 
+    "[]"
+);
+
+// Automatically save old data to the new PERMANENT key once
 if (!localStorage.getItem(STORE_KEY) && entries.length > 0) {
     localStorage.setItem(STORE_KEY, JSON.stringify(entries));
 }
@@ -436,8 +443,8 @@ try {
 const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const daysArr = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
 const morningTimes = ["6:00 AM", "6:30 AM", "7:00 AM", "7:30 AM", "8:00 AM"];
+// Time starts at 3:00 PM now
 const times=["3:00 PM","3:30 PM","4:00 PM","4:30 PM","5:00 PM","5:30 PM","6:00 PM","6:30 PM","7:00 PM","7:30 PM","8:00 PM","8:30 PM","9:00 PM","9:30 PM","10:00 PM","10:30 PM","11:00 PM","11:30 PM","12:00 AM"];
-
 
 // Settings Modal Functions
 function openSettings() {
@@ -605,6 +612,7 @@ function updateUI(){
     
     if(out.options.length === 0) {
         times.forEach(t=>{ out.add(new Option(t, t)); });
+        out.value = "5:30 PM"; // Default selected value is 5:30 PM
     }
     if(inT.options.length === 0) {
         morningTimes.forEach(t=>{ inT.add(new Option(t, t)); });
