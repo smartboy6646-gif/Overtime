@@ -349,7 +349,7 @@ body.theme-dark .slip-table td { border-color:#555;}
     </div>
 </div>
 
-<!-- App Settings Modal (z-index 3500 ensures it is above missingModal) -->
+<!-- App Settings Modal -->
 <div id="settingsModal" class="modal-overlay" style="z-index: 3500;">
     <div class="modal-box">
         <h3 style="margin-top:0; color:var(--primary);">⚙️ App Settings (सेटिङ्स)</h3>
@@ -467,8 +467,6 @@ function saveSettings() {
     updateUI(); 
     renderData(); 
     showToast("Settings Saved! ⚙️");
-    
-    // Check missing entries AFTER settings are saved
     checkMissingEntries();
 }
 
@@ -493,10 +491,8 @@ function updateHeaderDate() {
     document.getElementById("krDateHeader").innerText = `📅 KST: ${getKrDateString()} [${dayName}]`;
 }
 
-// Smart Missing Entry Logic
 function checkMissingEntries() {
     if (!entries || entries.length === 0) return;
-    
     let todayDate = getKrDateObject();
     todayDate.setHours(0,0,0,0);
     
@@ -505,15 +501,12 @@ function checkMissingEntries() {
     let currentMonthPrefix = `${yyyy}-${mm}`;
     
     let thisMonthEntries = entries.filter(e => e.date.startsWith(currentMonthPrefix));
-    
     if (thisMonthEntries.length === 0) return;
     
     let firstEntryDateThisMonth = new Date(thisMonthEntries[0].date);
     firstEntryDateThisMonth.setHours(0,0,0,0);
-    
     let entryDates = new Set(thisMonthEntries.map(e => e.date));
     let missing = [];
-    
     let checkDate = new Date(firstEntryDateThisMonth);
     
     while (checkDate < todayDate) {
@@ -521,10 +514,7 @@ function checkMissingEntries() {
         let cmm = String(checkDate.getMonth() + 1).padStart(2, '0');
         let cdd = String(checkDate.getDate()).padStart(2, '0');
         let dStr = `${cyyyy}-${cmm}-${cdd}`;
-        
-        if (!entryDates.has(dStr)) {
-            missing.push(dStr);
-        }
+        if (!entryDates.has(dStr)) missing.push(dStr);
         checkDate.setDate(checkDate.getDate() + 1);
     }
     
@@ -535,10 +525,8 @@ function checkMissingEntries() {
             displayMissing = missing.slice(-7);
             moreCount = missing.length - 7;
         }
-        
         let missingStr = displayMissing.join("<br>");
         if (moreCount > 0) missingStr += `<br><i style="font-size:11px; color:#555;">...and ${moreCount} more days</i>`;
-        
         document.getElementById("missingDatesText").innerHTML = missingStr;
         document.getElementById("missingModal").classList.add("active");
     }
@@ -578,18 +566,14 @@ function formatTime(timeStr) {
 function parseTimeToMins(timeStr) {
     if(!timeStr) return 0;
     let [t, m] = timeStr.split(' '), [h, min] = t.split(':').map(Number);
-    if (timeStr === "12:00 AM") {
-        h = 24; min = 0;
-    } else {
-        if(h===12) h=(m==='AM')?0:12; else if(m==='PM') h+=12;
-    }
+    if (timeStr === "12:00 AM") { h = 24; min = 0; } 
+    else { if(h===12) h=(m==='AM')?0:12; else if(m==='PM') h+=12; }
     return (h*60)+min;
 }
 
 function showToast(msg) {
     let x = document.getElementById("toast"); 
-    x.innerText = msg; 
-    x.className = "show";
+    x.innerText = msg; x.className = "show";
     setTimeout(() => { x.className = x.className.replace("show", ""); }, 3000);
 }
 
@@ -625,7 +609,6 @@ function updateUI(){
     
     document.getElementById("outBox").classList.toggle("hide", workedVal === "no");
     
-    // Show/Hide In Time box based on settings and work status
     if (appSettings && appSettings.entryMode === "2" && workedVal === "yes") {
         document.getElementById("inBox").classList.remove("hide");
     } else {
@@ -636,7 +619,7 @@ function updateUI(){
 function updateMonthSelector() {
     const sel = document.getElementById("monthSelector"); sel.innerHTML = "";
     let avail = new Set(); entries.forEach(e => avail.add(e.date.slice(0, 7)));
-    avail.add(getKrDateString().slice(0, 7)); // Use KST Month
+    avail.add(getKrDateString().slice(0, 7));
     let sorted = Array.from(avail).sort().reverse();
     sorted.forEach(m => { let [y, mo] = m.split('-'); sel.add(new Option(`${months[parseInt(mo)-1]} ${y}`, m)); });
     if(sorted.includes(currentViewMonth)) sel.value = currentViewMonth;
@@ -663,44 +646,72 @@ function confirmSave() {
     let workedVal = (type === "weekday") ? "yes" : ((type === "personal_leave") ? "no" : document.getElementById("worked").value);
     let noteVal = document.getElementById("entryNote").value.trim();
     
-    let normalOt = 0, nightOt = 0, totalMins = 0;
+    let basicHrs = 0, normalOt = 0, nightOt = 0;
     let otStartMins = appSettings ? appSettings.otStartMins : 1050; // Default 5:30 PM
-    let morningOt = 0;
 
-    if(workedVal === "yes") {
-        totalMins = parseTimeToMins(outVal);
+    if (workedVal === "yes") {
+        let totalMins = parseTimeToMins(outVal);
+        let actualInMins = 480; // 8:00 AM Default
         
-        // Calculate morning OT if dual mode is active
-        if(appSettings && appSettings.entryMode === "2") {
+        if (appSettings && appSettings.entryMode === "2") {
             inVal = document.getElementById("inTime").value;
-            let inMins = parseTimeToMins(inVal); // e.g. 6:00 AM = 360
-            morningOt = Math.max(0, (480 - inMins) / 60); // 8:00 AM = 480
+            actualInMins = parseTimeToMins(inVal); 
         }
 
-        if (type === "sunday" || type === "holiday") {
-            normalOt = Math.max(0, (Math.min(totalMins, 1320) - otStartMins) / 60) + morningOt; 
-            nightOt = Math.max(0, (totalMins - 1320) / 60); 
-        } else if (type === "saturday") {
-            normalOt = 8 + Math.max(0, (Math.min(totalMins, 1320) - otStartMins) / 60) + morningOt; 
-            nightOt = Math.max(0, (totalMins - 1320) / 60); 
-        } else if (type === "weekday") {
-            normalOt = Math.max(0, (Math.min(totalMins, 1320) - otStartMins) / 60) + morningOt; 
-            nightOt = Math.max(0, (totalMins - 1320) / 60);
+        // 1. Calculate morning OT
+        let morningOt = Math.max(0, (480 - actualInMins) / 60);
+
+        // 2. Calculate Basic Hours (Accurate early leave + lunch deduction)
+        let baseStartMins = Math.max(480, actualInMins); // Basic hours only count from 8:00 AM
+        let workedDuration = 0;
+        
+        if (totalMins <= 720) { // Left before or exactly at 12:00 PM
+            workedDuration = totalMins - baseStartMins;
+        } else if (totalMins > 720 && totalMins <= 780) { // Left during lunch (12PM - 1PM)
+            workedDuration = 720 - baseStartMins;
+        } else { // Left after 1:00 PM
+            workedDuration = totalMins - baseStartMins - 60; // Deduct 1 hr lunch
         }
+        
+        basicHrs = Math.max(0, workedDuration / 60);
+        basicHrs = Math.min(8, basicHrs); // Cap at max 8 base hours
+
+        // 3. Calculate evening OT
+        let eveningOt = Math.max(0, (Math.min(totalMins, 1320) - otStartMins) / 60);
+
+        // 4. Calculate night OT
+        nightOt = Math.max(0, (totalMins - 1320) / 60);
+
+        // 5. Final assignment based on day type
+        if (type === "weekday") {
+            normalOt = morningOt + eveningOt;
+        } else if (type === "saturday") {
+            // Saturday has no normal basic hours, everything is OT
+            normalOt = basicHrs + morningOt + eveningOt;
+            basicHrs = 0;
+        } else if (type === "sunday" || type === "holiday") {
+            normalOt = morningOt + eveningOt;
+            // basicHrs remains as calculated (holiday work base, up to 8 hrs)
+        }
+    } else {
+        if (type === "personal_leave") basicHrs = 8;
     }
     
-    pendingEntry = { date, type, worked:workedVal, normalOt, nightOt, outVal, inVal, note: noteVal };
+    pendingEntry = { date, type, worked:workedVal, basicHrs, normalOt, nightOt, outVal, inVal, note: noteVal };
 
     let typeNames = { "weekday": "정상출근 (Weekday)", "saturday": "토요근무 (Saturday)", "sunday": "유급휴일 (Sunday)", "holiday": "휴일근로 (Holiday)", "personal_leave": "연차 (Leave)" };
     let html = `<b>Date:</b> ${date}<br><b>Type:</b> ${typeNames[type]}<br><b>Worked:</b> ${workedVal === 'yes' ? 'Yes' : 'No'}<br>`;
     
-    if(workedVal === 'yes') {
+    if (workedVal === 'yes') {
         if(appSettings && appSettings.entryMode === "2") {
             html += `<b>In:</b> ${inVal} | <b>Out:</b> ${outVal}<br>`;
         } else {
             html += `<b>Out:</b> ${outVal}<br>`;
         }
-        html += `<b>New OT calculated:</b> ${normalOt.toFixed(1)} h`;
+        html += `<b>Base Hrs:</b> ${basicHrs.toFixed(1)} h<br>`;
+        if (normalOt > 0 || nightOt > 0) {
+            html += `<b>OT Hrs:</b> ${(normalOt + nightOt).toFixed(1)} h`;
+        }
     }
 
     document.getElementById("confirmText").innerHTML = html;
@@ -777,25 +788,22 @@ function generateTableRows(dataList, targetTbodyId, includeMissing = true) {
                     timeDisplay = formatTime(e.outVal);
                 }
             }
-            
-            // Adjust styles for holiday row dual time
             if(e.type !== "weekday" && e.type !== "personal_leave" && e.inVal) {
                 timeDisplay = timeDisplay.replace(/color:#555;/g, "color:#ffebee;").replace(/color:var\(--text\);/g, "color:white;");
             }
             
             let dot = (e.date === todayStr && targetTbodyId !== "repHistoryBody") ? `<div class="dot"></div>` : '';
             
+            // Support backward compatibility for old data display
             let displayBasic = 0;
-            if(e.type==="weekday" && e.worked==="yes") displayBasic = 8;
-            if(e.type==="personal_leave") displayBasic = 8;
-            
-            let displayOt = e.normalOt || 0;
-            if(e.type==="sunday" || e.type==="holiday") {
-                if(e.worked==="yes" && displayOt >= 8 && e.basicHrs===8) {
-                    displayOt = displayOt - 8;
-                }
+            if (e.basicHrs !== undefined) {
+                displayBasic = e.basicHrs;
+            } else {
+                if (e.type === "weekday" && e.worked === "yes") displayBasic = 8;
+                if (e.type === "personal_leave") displayBasic = 8;
             }
 
+            let displayOt = e.normalOt || 0;
             let totalOt = (displayOt + (e.nightOt||0)).toFixed(1);
             let displayNote = (e.note && e.note.trim() !== "") ? e.note : "-";
 
@@ -845,35 +853,41 @@ function renderData() {
 
     filtered.forEach(e => {
         let isWorked = (e.worked === "yes");
+        
+        // Backward compatibility handler
+        let eBas = 0;
+        if (e.basicHrs !== undefined) {
+            eBas = e.basicHrs;
+        } else {
+            if ((e.type === "weekday" || e.type === "sunday" || e.type === "holiday") && isWorked) eBas = 8;
+            else if (e.type === "personal_leave") eBas = 8;
+        }
+
         let eOt = e.normalOt || 0;
         let eNi = e.nightOt || 0;
 
-        if((e.type==="sunday" || e.type==="holiday") && isWorked && e.basicHrs===8 && eOt >= 8) {
-            eOt = eOt - 8; 
-        }
-
-        if(e.type === "weekday") {
+        if (e.type === "weekday") {
             sum_wD++;
-            if(isWorked) { wD++; normalHrs += 8; otHrs += eOt; nightHrs += eNi; }
+            if(isWorked) { wD++; normalHrs += eBas; otHrs += eOt; nightHrs += eNi; }
             else { absentD++; }
         }
-                else if(e.type === "personal_leave") {
+        else if (e.type === "personal_leave") {
             sum_leave++;
             leaveD++; 
             paidHolHrs += 8; 
         }
-        else if(e.type === "saturday") {
+        else if (e.type === "saturday") {
             sum_sat++;
             if(isWorked) { satWorkD++; otHrs += eOt; nightHrs += eNi; }
             else { unpaidSatD++; }
         }
-        else if(e.type === "sunday" || e.type === "holiday") {
+        else if (e.type === "sunday" || e.type === "holiday") {
             if(e.type === "sunday") sum_sun++;
             if(e.type === "holiday") sum_hol++;
 
             if(isWorked) { 
                 holWorkD++; 
-                holWorkHrs += 8; 
+                holWorkHrs += eBas; // The hours actually worked on holiday (up to 8)
                 otHrs += eOt; 
                 nightHrs += eNi; 
                 
@@ -1036,7 +1050,6 @@ renderData();
 if (!appSettings || !appSettings.entryMode) {
     setTimeout(() => { openSettings(); }, 500);
 } else {
-    // If settings are already present, check missing entries directly
     checkMissingEntries();
 }
 
